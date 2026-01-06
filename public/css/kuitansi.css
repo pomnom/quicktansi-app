@@ -1,0 +1,422 @@
+/* DataTables CSS */
+@import url('https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css');
+
+/* SweetAlert2 CSS */
+@import url('https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css');
+
+/* Dark Mode Styles - High Contrast */
+.dark-mode {
+    background-color: #0a0a0a !important;
+    color: #ffffff !important;
+}
+
+.dark-mode #content-wrapper,
+.dark-mode #content,
+.dark-mode .container-fluid {
+    background-color: #0a0a0a !important;
+}
+
+/* Cards */
+.dark-mode .card {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+    border: 1px solid #2d2d2d !important;
+}
+
+.dark-mode .card-header {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #2d2d2d !important;
+}
+
+/* Tables */
+.dark-mode .table {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .table th {
+    background-color: #252525 !important;
+    color: #ffffff !important;
+    border-color: #3d3d3d !important;
+    font-weight: 600;
+}
+
+.dark-mode .table td {
+    background-color: #1a1a1a !important;
+    color: #e0e0e0 !important;
+    border-color: #2d2d2d !important;
+}
+
+.dark-mode .table-bordered {
+    border: 1px solid #2d2d2d !important;
+}
+
+.dark-mode .table-hover tbody tr:hover {
+    background-color: #252525 !important;
+    color: #ffffff !important;
+}
+
+/* Buttons */
+.dark-mode .btn-primary {
+    background-color: #4e73df !important;
+    border-color: #4e73df !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .btn-primary:hover {
+    background-color: #3a5cc0 !important;
+    border-color: #3a5cc0 !important;
+}
+
+.dark-mode .btn-secondary {
+    background-color: #3d3d3d !important;
+    border-color: #3d3d3d !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .btn-secondary:hover {
+    background-color: #4d4d4d !important;
+    border-color: #4d4d4d !important;
+}
+
+.dark-mode .btn-info {
+    background-color: #36b9cc !important;
+    border-color: #36b9cc !important;
+}
+
+.dark-mode .btn-success {
+    background-color: #1cc88a !important;
+    border-color: #1cc88a !important;
+}
+
+.dark-mode .btn-danger {
+    background-color: #e74a3b !important;
+    border-color: #e74a3b !important;
+}
+
+/* Modals */
+.dark-mode .modal-content {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+    border: 1px solid #2d2d2d !important;
+}
+
+.dark-mode .modal-header {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #2d2d2d !important;
+}
+
+.dark-mode .modal-footer {
+    background-color: #1a1a1a !important;
+    border-top: 1px solid #2d2d2d !important;
+}
+
+.dark-mode .modal-title {
+    color: #ffffff !important;
+}
+
+.dark-mode .close {
+    color: #ffffff !important;
+    opacity: 0.8;
+}
+
+.dark-mode .close:hover {
+    color: #ffffff !important;
+    opacity: 1;
+}
+
+/* Forms */
+.dark-mode .form-control {
+    background-color: #252525 !important;
+    color: #ffffff !important;
+    border: 1px solid #3d3d3d !important;
+}
+
+.dark-mode .form-control:focus {
+    background-color: #252525 !important;
+    color: #ffffff !important;
+    border-color: #4e73df !important;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25) !important;
+}
+
+.dark-mode .form-control::placeholder {
+    color: #888888 !important;
+}
+
+.dark-mode label,
+.dark-mode .form-text {
+    color: #cccccc !important;
+}
+
+.dark-mode select.form-control option {
+    background-color: #252525 !important;
+    color: #ffffff !important;
+}
+
+/* Sidebar */
+.dark-mode .sidebar {
+    background: linear-gradient(180deg, #1a1a1a 10%, #0a0a0a 100%) !important;
+}
+
+.dark-mode .sidebar-dark {
+    background: linear-gradient(180deg, #1a1a1a 10%, #0a0a0a 100%) !important;
+}
+
+.dark-mode .sidebar .nav-item .nav-link {
+    color: #cccccc !important;
+}
+
+.dark-mode .sidebar .nav-item .nav-link:hover {
+    color: #ffffff !important;
+}
+
+.dark-mode .sidebar .nav-item.active .nav-link {
+    color: #ffffff !important;
+    background-color: #252525 !important;
+}
+
+.dark-mode .sidebar .sidebar-brand {
+    color: #ffffff !important;
+}
+
+.dark-mode .sidebar hr.sidebar-divider {
+    border-color: #2d2d2d !important;
+}
+
+.dark-mode .sidebar-heading {
+    color: #888888 !important;
+}
+
+.dark-mode .collapse-inner {
+    background-color: #252525 !important;
+    border: 1px solid #2d2d2d !important;
+}
+
+.dark-mode .collapse-item {
+    color: #cccccc !important;
+}
+
+.dark-mode .collapse-item:hover {
+    background-color: #2d2d2d !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .collapse-header {
+    color: #888888 !important;
+}
+
+/* Topbar */
+.dark-mode .navbar {
+    background-color: #1a1a1a !important;
+    border-bottom: 1px solid #2d2d2d !important;
+}
+
+.dark-mode .navbar-nav .nav-link {
+    color: #cccccc !important;
+}
+
+.dark-mode .navbar-nav .nav-link:hover {
+    color: #ffffff !important;
+}
+
+.dark-mode .topbar {
+    background-color: #1a1a1a !important;
+}
+
+/* Text Colors */
+.dark-mode .text-gray-800 {
+    color: #ffffff !important;
+}
+
+.dark-mode .text-gray-900 {
+    color: #ffffff !important;
+}
+
+.dark-mode .text-primary {
+    color: #6b9dff !important;
+}
+
+.dark-mode .font-weight-bold {
+    color: #ffffff !important;
+}
+
+.dark-mode h1, .dark-mode h2, .dark-mode h3, 
+.dark-mode h4, .dark-mode h5, .dark-mode h6 {
+    color: #ffffff !important;
+}
+
+/* Background Colors */
+.dark-mode .bg-white {
+    background-color: #1a1a1a !important;
+}
+
+.dark-mode .bg-gradient-primary {
+    background: linear-gradient(180deg, #1a1a1a 10%, #0a0a0a 100%) !important;
+}
+
+/* Borders */
+.dark-mode .border-left-primary {
+    border-left-color: #4e73df !important;
+}
+
+/* DataTables */
+.dark-mode .dataTables_wrapper .dataTables_length,
+.dark-mode .dataTables_wrapper .dataTables_filter,
+.dark-mode .dataTables_wrapper .dataTables_info,
+.dark-mode .dataTables_wrapper .dataTables_paginate {
+    color: #ffffff !important;
+}
+
+.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: #ffffff !important;
+    background-color: #252525 !important;
+    border: 1px solid #3d3d3d !important;
+}
+
+.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background-color: #2d2d2d !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background-color: #4e73df !important;
+    color: #ffffff !important;
+    border-color: #4e73df !important;
+}
+
+/* Select2 Dark Mode */
+.dark-mode .select2-container--bootstrap-5 .select2-selection {
+    background-color: #252525 !important;
+    border-color: #3d3d3d !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .select2-container--bootstrap-5 .select2-selection__rendered {
+    color: #ffffff !important;
+}
+
+.dark-mode .select2-container--bootstrap-5 .select2-selection__placeholder {
+    color: #888888 !important;
+}
+
+.dark-mode .select2-dropdown {
+    background-color: #252525 !important;
+    border: 1px solid #3d3d3d !important;
+}
+
+.dark-mode .select2-search--dropdown .select2-search__field {
+    background-color: #1a1a1a !important;
+    border: 1px solid #3d3d3d !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .select2-results__option {
+    background-color: #252525 !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .select2-results__option--highlighted {
+    background-color: #4e73df !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .select2-results__option--selected {
+    background-color: #2d2d2d !important;
+}
+
+/* Footer */
+.dark-mode footer {
+    background-color: #1a1a1a !important;
+    color: #888888 !important;
+}
+
+/* Shadows */
+.dark-mode .shadow {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Smooth Transitions */
+.dark-mode * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* Logo Responsive Styles */
+.sidebar-brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+}
+
+.logo-responsive {
+    max-width: 100%;
+    height: auto;
+    width: 45px;
+    transition: all 0.3s ease;
+    filter: brightness(0) invert(1);
+}
+
+/* Sidebar expanded */
+@media (min-width: 768px) {
+    .sidebar:not(.toggled) .logo-responsive {
+        width: 50px;
+    }
+}
+
+/* Sidebar collapsed */
+.sidebar.toggled .logo-responsive {
+    width: 35px;
+}
+
+.sidebar.toggled .sidebar-brand-text {
+    display: none;
+}
+
+/* Mobile responsive */
+@media (max-width: 767px) {
+    .logo-responsive {
+        width: 40px;
+    }
+    
+    .sidebar-brand-text {
+        font-size: 0.9rem;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    .logo-responsive {
+        width: 35px;
+    }
+    
+    .sidebar-brand-text {
+        font-size: 0.85rem;
+    }
+}
+
+/* Dark mode logo adjustments */
+.dark-mode .logo-responsive {
+    filter: brightness(0) invert(1);
+}
+
+/* Logo hover effect */
+.sidebar-brand:hover .logo-responsive {
+    transform: scale(1.05);
+    filter: brightness(0) invert(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+}
+
+.dark-mode .sidebar-brand:hover .logo-responsive {
+    filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+}
+
+/* Compact font size for main datatable */
+#dataTable {
+    font-size: 10px;
+}
+
+#dataTable th,
+#dataTable td {
+    font-size: 10px;
+}
