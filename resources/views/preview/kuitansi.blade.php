@@ -201,13 +201,15 @@
         <tr>
             <td colspan="3" class="signature-center-cell">
                 <div class="signature-row-center">
+                    @if($kuitansi->nama_bendahara_barang)
                     <div class="signature-block">
                         <p class="role-title">Telah diperiksa cukup</p>
                         <p class="role-subtitle">Bendahara Barang</p>
-                        <p class="sig-name">{{ $kuitansi->nama_bendahara_barang ?? $bendaharaBarang->nama ?? 'N/A' }}</p>
+                        <p class="sig-name">{{ $kuitansi->nama_bendahara_barang }}</p>
                         <div class="sig-line"></div>
-                        <p class="sig-nip">NIP. {{ $kuitansi->nip_bendahara_barang ?? $bendaharaBarang->nip ?? '-' }}</p>
+                        <p class="sig-nip">{{ $kuitansi->nip_bendahara_barang ? 'NIP. ' . $kuitansi->nip_bendahara_barang : '' }}</p>
                     </div>
+                    @endif
                     <div class="signature-block">
                         <p class="role-title">Pejabat Pelaksana Teknis Kegiatan</p>
                         <p class="role-subtitle">{{ $kuitansi->pptk->jabatan ?? 'PPTK' }}</p>

@@ -115,8 +115,13 @@ class KuitansiController extends Controller
         // Get staff for snapshot
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->first();
-        $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->first();
         $pptk = Staff::findOrFail($request->pptk_1_id);
+        
+        // Handle nama_bendahara_barang from form input (if provided)
+        $namaBendaharaBarang = null;
+        if ($request->filled('nama_bendahara_barang')) {
+            $namaBendaharaBarang = $request->nama_bendahara_barang;
+        }
         
         // Get next nomor_urut for this periode
         $lastInPeriode = Kuitansi::where('periode_type', $periodeType)
@@ -152,8 +157,8 @@ class KuitansiController extends Controller
             'nip_pengguna_anggaran' => $penggunaAnggaran->nip ?? null,
             'nama_bendahara_pengeluaran' => $bendaharaPengeluaran->nama ?? null,
             'nip_bendahara_pengeluaran' => $bendaharaPengeluaran->nip ?? null,
-            'nama_bendahara_barang' => $bendaharaBarang->nama ?? null,
-            'nip_bendahara_barang' => $bendaharaBarang->nip ?? null,
+            'nama_bendahara_barang' => $namaBendaharaBarang,
+            'nip_bendahara_barang' => null,
             'nama_pptk' => $pptk->nama,
             'nip_pptk' => $pptk->nip,
         ]);
@@ -163,7 +168,7 @@ class KuitansiController extends Controller
 
     public function edit(string $id)
     {
-        $kuitansi = Kuitansi::findOrFail($id);
+        $kuitansi = Kuitansi::with(['rekanan', 'pptk'])->findOrFail($id);
         return response()->json($kuitansi);
     }
 
@@ -233,8 +238,13 @@ class KuitansiController extends Controller
         // Get staff for snapshot
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->first();
-        $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->first();
         $pptk = Staff::findOrFail($request->pptk_1_id);
+        
+        // Handle nama_bendahara_barang from form input (if provided)
+        $namaBendaharaBarang = null;
+        if ($request->filled('nama_bendahara_barang')) {
+            $namaBendaharaBarang = $request->nama_bendahara_barang;
+        }
         
         // Generate noBuku dengan periode dan nomor_urut yang baru diinput
         $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
@@ -264,8 +274,8 @@ class KuitansiController extends Controller
             'nip_pengguna_anggaran' => $penggunaAnggaran->nip ?? null,
             'nama_bendahara_pengeluaran' => $bendaharaPengeluaran->nama ?? null,
             'nip_bendahara_pengeluaran' => $bendaharaPengeluaran->nip ?? null,
-            'nama_bendahara_barang' => $bendaharaBarang->nama ?? null,
-            'nip_bendahara_barang' => $bendaharaBarang->nip ?? null,
+            'nama_bendahara_barang' => $namaBendaharaBarang,
+            'nip_bendahara_barang' => null,
             'nama_pptk' => $pptk->nama,
             'nip_pptk' => $pptk->nip,
         ]);
@@ -288,9 +298,8 @@ class KuitansiController extends Controller
         // Get fixed staff
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->first();
-        $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->first();
         
-        return view('preview.kuitansi', compact('kuitansi', 'penggunaAnggaran', 'bendaharaPengeluaran', 'bendaharaBarang'));
+        return view('preview.kuitansi', compact('kuitansi', 'penggunaAnggaran', 'bendaharaPengeluaran'));
     }
 
     // API endpoints for cascading selects

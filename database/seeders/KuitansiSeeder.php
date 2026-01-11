@@ -6,6 +6,7 @@ use App\Models\Kuitansi;
 use App\Models\Rekanan;
 use App\Models\KodeRekening;
 use App\Models\Staff;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class KuitansiSeeder extends Seeder
@@ -19,7 +20,8 @@ class KuitansiSeeder extends Seeder
 
         $rekanans = Rekanan::all();
         $kodeRekenings = KodeRekening::all();
-        $pptks = Staff::all();
+        $pptks = Staff::where('status', 'PPTK')->get();
+        $allStaff = Staff::all();
         
         if ($rekanans->isEmpty()) {
             echo "Tidak ada rekanan. Jalankan RekananSeeder terlebih dahulu.\n";
@@ -53,28 +55,32 @@ class KuitansiSeeder extends Seeder
         $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->first();
 
         // Helper to compute pajak dan total with new rule
-        $computePajak = function(array $items, ?string $jenisPph, float $tarifPajak): array {
-            $grand = 0;
+        $computePajak = function(array $items, ?string $jenisPph, ?float $tarifPajak): array {
+            $dpp = 0;
             foreach ($items as $it) {
-                $grand += ((int)($it['jumlah'] ?? 0)) * ((float)($it['harga_satuan'] ?? 0));
+                $dpp += ((int)($it['jumlah'] ?? 0)) * ((float)($it['harga_satuan'] ?? 0));
             }
-            $grand = (int) round($grand);
-            $ppn = $grand > 2000000 ? (int) ceil($grand * 0.11) : 0;
-            
-            // PPH calculation dengan rule baru: PPH 22 hanya jika belanja > 2M
+            $dpp = (int) round($dpp);
+
+            $ppn = $dpp > 2000000 ? (int) ceil($dpp * 0.11) : 0;
+
             $pph = 0;
-            if (!empty($jenisPph) && $tarifPajak > 0) {
-                if ($jenisPph === '22' && $grand <= 2000000) {
+            if (!empty($jenisPph) && $tarifPajak) {
+                if ($jenisPph === '22' && $dpp <= 2000000) {
                     $pph = 0; // Tidak kena pajak
                 } else {
-                    // PPH 23 atau PPH 22 dengan belanja > 2M
-                    $pph = (int) round($grand * $tarifPajak / 100);
+                    $pph = (int) round($dpp * $tarifPajak / 100);
                 }
             }
+
+            // Total mengikuti logika controller: DPP + PPN - PPH
+            $totalAkhir = $dpp + $ppn - $pph;
+
             return [
+                'dpp' => $dpp,
                 'ppn' => $ppn,
                 'pph' => $pph,
-                'total_akhir' => $grand + $ppn + $pph
+                'total_akhir' => $totalAkhir,
             ];
         };
 
@@ -96,21 +102,39 @@ class KuitansiSeeder extends Seeder
             ['periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 6, 'jenis_pph' => '22', 'items' => [ ['nama' => 'Kipas Angin Industri', 'jumlah' => 3, 'harga_satuan' => 300000 ] ]], // 0.9M
         ];
 
-        foreach ($dataset as $data) {
+        $datePool = [
+            Carbon::create(2026, 1, 10),
+            Carbon::create(2026, 1, 18),
+            Carbon::create(2026, 1, 27),
+            Carbon::create(2026, 2, 5),
+            Carbon::create(2026, 2, 14),
+            Carbon::create(2026, 2, 28),
+            Carbon::create(2026, 3, 8),
+            Carbon::create(2026, 3, 19),
+            Carbon::create(2026, 3, 30),
+            Carbon::create(2026, 4, 10),
+            Carbon::create(2026, 4, 20),
+            Carbon::create(2026, 4, 30),
+        ];
+
+        foreach ($dataset as $i => $data) {
+            $tanggalKuitansi = $datePool[$i % count($datePool)]; // variasi tanggal lintas bulan
+
             $items = $data['items'];
             $jenisPph = $data['jenis_pph'];
-            $tarifPajak = $jenisPph === '23' ? (float) $taxCode23->tarif : (float) $taxCode22->tarif;
+
+            $tarifPajak = null;
+            if ($jenisPph === '23') {
+                $tarifPajak = (float) $taxCode23->tarif;
+            } elseif ($jenisPph === '22') {
+                $tarifPajak = (float) $taxCode22->tarif;
+            }
 
             $pajak = $computePajak($items, $jenisPph, $tarifPajak);
-            $dpp = 0;
-            foreach ($items as $it) {
-                $dpp += ((int)$it['jumlah']) * ((float)$it['harga_satuan']);
-            }
-            $dpp = (int) round($dpp);
 
             $kodeRekening = $kodeRekenings->random();
             $rekanan = $rekanans->random();
-            $pptk = $pptks->random();
+            $pptk = ($pptks->isNotEmpty() ? $pptks : $allStaff)->random();
 
             $noBuku = $data['periode_type'] . ' ' . $data['periode_number'] . ' / ' . str_pad($data['nomor_urut'], 3, '0', STR_PAD_LEFT);
 
@@ -123,7 +147,8 @@ class KuitansiSeeder extends Seeder
                 'no_buku' => $noBuku,
                 'rekanan_id' => $rekanan->id,
                 'nama_penerima' => $rekanan->nama_perusahaan,
-                'tanggal_kuitansi' => now(),
+                'tanggal_kuitansi' => $tanggalKuitansi,
+                'tanggal_pemotongan' => $tanggalKuitansi,
                 'ppn' => $pajak['ppn'],
                 'pph' => $pajak['pph'],
                 'jenis_pph' => $jenisPph,
@@ -139,19 +164,17 @@ class KuitansiSeeder extends Seeder
                 'nip_bendahara_barang' => $bendaharaBarang->nip ?? null,
                 'nama_pptk' => $pptk->nama,
                 'nip_pptk' => $pptk->nip,
+                'dpp' => $pajak['dpp'],
+                'jenis_dokumen' => 'PaymentProof',
             ];
 
             // Isi kode objek pajak dan tarif untuk semua jenis_pph
             if ($jenisPph) {
                 $payload['kode_objek_pajak'] = $jenisPph === '23' ? $taxCode23->kode : $taxCode22->kode;
-                $payload['tarif_pajak'] = $jenisPph === '23' ? $taxCode23->tarif : $taxCode22->tarif;
-            }
-
-            // Isi BuPot fields hanya jika dpp >= 2M
-            if ($dpp >= 2000000 && $jenisPph) {
-                $payload['dpp'] = $dpp;
-                $payload['jenis_dokumen'] = 'PaymentProof';
-                $payload['tanggal_pemotongan'] = now();
+                $payload['tarif_pajak'] = $tarifPajak;
+            } else {
+                $payload['kode_objek_pajak'] = null;
+                $payload['tarif_pajak'] = null;
             }
 
             Kuitansi::create($payload);

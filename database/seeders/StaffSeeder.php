@@ -18,113 +18,113 @@ class StaffSeeder extends Seeder
         \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $staff = [
-            // 1 Pengguna Anggaran
+            // Pengguna Anggaran
             [
-                'nip' => '19731007 199803 1 006',
-                'nama' => 'Muhammad Syahroni, SP., MM',
-                'jabatan' => 'Kepala BPKAD',
-                'golongan' => 'IV/c',
+                'nip' => '197305082006041009',
+                'nama' => 'Dr. Ir. Bambang Suryanto, M.M.',
+                'jabatan' => 'Kepala Badan Pengelolaan Keuangan dan Aset Daerah',
+                'golongan' => 'IV/d',
                 'status' => 'Pengguna Anggaran',
             ],
 
-            // 1 PPK
+            // PPK (Pejabat Pembuat Komitmen)
             [
-                'nip' => '19680915 199203 1 005',
-                'nama' => 'Drs. Ahmad Fauzi, M.Si',
-                'jabatan' => 'Kepala Bidang Anggaran',
-                'golongan' => 'IV/a',
+                'nip' => '196809151992031005',
+                'nama' => 'Dra. Siti Fatimah, M.Si.',
+                'jabatan' => 'Kepala Bidang Anggaran dan Perbendaharaan',
+                'golongan' => 'IV/b',
                 'status' => 'PPK',
             ],
 
-            // 5 PPTK
+            // PPTK (Pejabat Pelaksana Teknis Kegiatan)
             [
-                'nip' => '19750412 200012 1 004',
-                'nama' => 'Budi Santoso, S.E., M.M',
-                'jabatan' => 'Kepala Sub Bidang Perencanaan',
+                'nip' => '197504122000121004',
+                'nama' => 'Ir. Ahmad Budiman, M.T.',
+                'jabatan' => 'Kepala Sub Bidang Perencanaan Anggaran',
                 'golongan' => 'III/d',
                 'status' => 'PPTK',
             ],
             [
-                'nip' => '19820703 201001 1 008',
-                'nama' => 'Siti Aminah, S.Kom., M.T',
-                'jabatan' => 'Kepala Sub Bidang Teknologi',
+                'nip' => '198207032010011008',
+                'nama' => 'Siti Nurhasanah, S.Kom., M.Kom.',
+                'jabatan' => 'Kepala Sub Bidang Sistem Informasi Keuangan',
                 'golongan' => 'III/c',
                 'status' => 'PPTK',
             ],
             [
-                'nip' => '19780225 200505 2 003',
-                'nama' => 'Dr. Hendra Wijaya, M.Pd',
-                'jabatan' => 'Kepala Sub Bidang Pembangunan',
+                'nip' => '197802252005052003',
+                'nama' => 'Hendra Gunawan, S.E., M.Ak.',
+                'jabatan' => 'Kepala Sub Bidang Akuntansi dan Pelaporan',
                 'golongan' => 'III/d',
                 'status' => 'PPTK',
             ],
             [
-                'nip' => '19851120 201103 1 002',
-                'nama' => 'Rudi Hartono, S.T., M.Eng',
-                'jabatan' => 'Kepala Sub Bidang Infrastruktur',
+                'nip' => '198511202011031002',
+                'nama' => 'Rudi Hermawan, S.E., M.M.',
+                'jabatan' => 'Kepala Sub Bidang Pendapatan Daerah',
                 'golongan' => 'III/b',
                 'status' => 'PPTK',
             ],
             [
-                'nip' => '19900308 201504 2 001',
-                'nama' => 'Dewi Lestari, S.Sos., M.AP',
-                'jabatan' => 'Kepala Sub Bidang Kesejahteraan',
+                'nip' => '199003082015042001',
+                'nama' => 'Dewi Puspitasari, S.E., M.M.',
+                'jabatan' => 'Kepala Sub Bidang Aset Daerah',
                 'golongan' => 'III/a',
                 'status' => 'PPTK',
             ],
 
-            // 1 Bendahara Pengeluaran
+            // Bendahara Pengeluaran
             [
-                'nip' => '19770518 200112 1 005',
-                'nama' => 'Yudi Prasetyo, S.E',
-                'jabatan' => 'Bendahara Pengeluaran',
+                'nip' => '197705182001121005',
+                'nama' => 'Yudi Prasetyo, S.E., M.Ak.',
+                'jabatan' => 'Bendahara Pengeluaran BPKAD',
                 'golongan' => 'III/c',
                 'status' => 'Bendahara Pengeluaran',
             ],
 
-            // 1 Bendahara Barang
+            // Bendahara Barang (Pengurus Barang)
             [
-                'nip' => '19840922 200903 2 006',
-                'nama' => 'Rina Kusuma, S.E',
-                'jabatan' => 'Bendahara Barang',
+                'nip' => '198409222009032006',
+                'nama' => 'Rina Kusuma Wardani, S.E.',
+                'jabatan' => 'Pengurus Barang BPKAD',
                 'golongan' => 'III/b',
                 'status' => 'Bendahara Barang',
             ],
 
-            // 5 Tanpa Status
+            // Staf Pendukung (Tanpa Status Khusus)
             [
-                'nip' => '19920115 201601 1 003',
-                'nama' => 'Andi Nugroho, S.H',
-                'jabatan' => 'Staf Hukum',
+                'nip' => '199201152016011003',
+                'nama' => 'Andi Nugroho, S.H., M.H.',
+                'jabatan' => 'Analis Hukum',
                 'golongan' => 'III/a',
                 'status' => null,
             ],
             [
-                'nip' => '19880607 201402 2 004',
-                'nama' => 'Maya Sari, S.Psi',
-                'jabatan' => 'Staf Kepegawaian',
-                'golongan' => 'II/d',
+                'nip' => '198807202013022007',
+                'nama' => 'Putri Ayu Lestari, S.Psi., M.M.',
+                'jabatan' => 'Analis Kepegawaian',
+                'golongan' => 'III/b',
                 'status' => null,
             ],
             [
-                'nip' => '19950430 201805 1 002',
-                'nama' => 'Rizki Ramadan, A.Md',
-                'jabatan' => 'Staf Administrasi',
-                'golongan' => 'II/c',
+                'nip' => '199505282018051001',
+                'nama' => 'Fajar Ramadhan, S.Kom.',
+                'jabatan' => 'Analis Sistem Informasi',
+                'golongan' => 'III/a',
                 'status' => null,
             ],
             [
-                'nip' => '19870812 201303 2 005',
-                'nama' => 'Fitri Handayani, S.Kom',
-                'jabatan' => 'Staf IT',
-                'golongan' => 'II/d',
+                'nip' => '199309102017042002',
+                'nama' => 'Rina Wijayanti, S.E.',
+                'jabatan' => 'Analis Keuangan',
+                'golongan' => 'III/a',
                 'status' => null,
             ],
             [
-                'nip' => '19930220 201706 1 001',
-                'nama' => 'Agus Setiawan, S.AP',
-                'jabatan' => 'Staf Umum',
-                'golongan' => 'II/b',
+                'nip' => '198904162015061009',
+                'nama' => 'Dedi Setiawan, S.Sos.',
+                'jabatan' => 'Analis Perencanaan',
+                'golongan' => 'III/a',
                 'status' => null,
             ],
         ];

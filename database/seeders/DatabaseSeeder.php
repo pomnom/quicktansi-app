@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             RekananSeeder::class,
             StaffSeeder::class,
             KegiatanSeeder::class,
+            KodeObjekPajakSeeder::class,
             KuitansiSeeder::class,
         ]);
     }

@@ -320,6 +320,18 @@
                         </select>
                         <small class="form-text text-muted">Pilih PPTK untuk menandatangani kuitansi</small>
                     </div>
+                    <!-- Bendahara Barang Section -->
+                    <div class="form-group">
+                        <label for="bendahara_checkbox">
+                            <input type="checkbox" id="bendahara_checkbox" name="bendahara_checkbox"> 
+                            Tambahkan Nama Bendahara Barang
+                        </label>
+                    </div>
+                    <div class="form-group" id="bendahara_field" style="display:none;">
+                        <label for="nama_bendahara_barang">Nama Bendahara Barang</label>
+                        <input type="text" class="form-control" id="nama_bendahara_barang" name="nama_bendahara_barang" placeholder="Masukkan nama bendahara barang">
+                        <small class="form-text text-muted">Nama bendahara barang akan ditampilkan di kuitansi</small>
+                    </div>
                     <!-- Items Section -->
                     <div class="form-group">
                         <label>Item Barang</label>
@@ -342,7 +354,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" type="submit" onclick="updateItemsJson()">Simpan</button>
+                    <button class="btn btn-primary" type="button" onclick="updateAddFormBefore(event)">Simpan</button>
                 </div>
             </form>
         </div>
@@ -527,6 +539,18 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Bendahara Barang Section -->
+                    <div class="form-group">
+                        <label for="edit_bendahara_checkbox">
+                            <input type="checkbox" id="edit_bendahara_checkbox" name="edit_bendahara_checkbox"> 
+                            Tambahkan Nama Bendahara Barang
+                        </label>
+                    </div>
+                    <div class="form-group" id="edit_bendahara_field" style="display:none;">
+                        <label for="edit_nama_bendahara_barang">Nama Bendahara Barang</label>
+                        <input type="text" class="form-control" id="edit_nama_bendahara_barang" name="nama_bendahara_barang" placeholder="Masukkan nama bendahara barang">
+                        <small class="form-text text-muted">Nama bendahara barang akan ditampilkan di kuitansi</small>
+                    </div>
                     <!-- Items Section -->
                     <div class="form-group">
                         <label>Item Barang</label>
@@ -549,7 +573,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" type="submit" onclick="updateEditItemsJson()">Update</button>
+                    <button class="btn btn-primary" type="button" onclick="updateEditFormBefore(event)">Update</button>
                 </div>
             </form>
         </div>
@@ -832,6 +856,18 @@ function updateItemsJson() {
     document.getElementById('rincian_item_json').value = JSON.stringify(items);
 }
 
+// Clear bendahara barang if checkbox is not checked (add modal)
+function updateAddFormBefore(event) {
+    if (event) event.preventDefault();
+    
+    if (!document.getElementById('bendahara_checkbox').checked) {
+        document.getElementById('nama_bendahara_barang').value = '';
+    }
+    updateItemsJson();
+    // Submit the form
+    document.querySelector('#addkuitansiModal form').submit();
+}
+
 // Update items JSON before submit (edit modal)
 function updateEditItemsJson() {
     const items = [];
@@ -846,7 +882,39 @@ function updateEditItemsJson() {
     document.getElementById('edit_rincian_item_json').value = JSON.stringify(items);
 }
 
+// Clear bendahara barang if checkbox is not checked (edit modal)
+function updateEditFormBefore(event) {
+    if (event) event.preventDefault();
+    
+    if (!document.getElementById('edit_bendahara_checkbox').checked) {
+        document.getElementById('edit_nama_bendahara_barang').value = '';
+    }
+    updateEditItemsJson();
+    // Submit the form
+    document.getElementById('editForm').submit();
+}
+
 $(document).ready(function() {
+    // Handle bendahara checkbox toggle (add modal)
+    $('#bendahara_checkbox').on('change', function() {
+        if ($(this).prop('checked')) {
+            $('#bendahara_field').slideDown(300);
+        } else {
+            $('#bendahara_field').slideUp(300);
+            $('#nama_bendahara_barang').val(''); // Clear value when unchecked
+        }
+    });
+
+    // Handle edit bendahara checkbox toggle (edit modal)
+    $('#edit_bendahara_checkbox').on('change', function() {
+        if ($(this).prop('checked')) {
+            $('#edit_bendahara_field').slideDown(300);
+        } else {
+            $('#edit_bendahara_field').slideUp(300);
+            $('#edit_nama_bendahara_barang').val(''); // Clear value when unchecked
+        }
+    });
+
     // Handle periode_lengkap change for both add and edit modals
     $('#periode_lengkap, #edit_periode_lengkap').on('change', function() {
         // This is now handled directly in the form, no need for auto-update
@@ -945,9 +1013,23 @@ $(document).ready(function() {
             $('#edit_untuk_pembayaran').val(data.untuk_pembayaran);
             $('#edit_pptk_1_id').val(data.pptk_1_id).trigger('change');
             
-            // Set snapshot fields (read-only)
-            document.getElementById('edit_nama_pptk').value = data.nama_pptk || '';
-            document.getElementById('edit_nip_pptk').value = data.nip_pptk || '';
+            // Set snapshot fields with fallback to pptk relation if snapshot is empty
+            const namaPptkSnapshot = data.nama_pptk || (data.pptk ? data.pptk.nama : '');
+            const nipPptkSnapshot = data.nip_pptk || (data.pptk ? data.pptk.nip : '');
+            
+            $('#edit_nama_pptk').prop('readonly', false).val(namaPptkSnapshot).prop('readonly', true);
+            $('#edit_nip_pptk').prop('readonly', false).val(nipPptkSnapshot).prop('readonly', true);
+            
+            // Set bendahara barang if exists
+            if (data.nama_bendahara_barang) {
+                document.getElementById('edit_bendahara_checkbox').checked = true;
+                document.getElementById('edit_nama_bendahara_barang').value = data.nama_bendahara_barang;
+                $('#edit_bendahara_field').show();
+            } else {
+                document.getElementById('edit_bendahara_checkbox').checked = false;
+                document.getElementById('edit_nama_bendahara_barang').value = '';
+                $('#edit_bendahara_field').hide();
+            }
             
             // Set kode_objek_pajak if exists
             if (data.kode_objek_pajak) {
