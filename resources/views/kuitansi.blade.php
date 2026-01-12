@@ -6,8 +6,8 @@
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Kuitansi</h1>
-    <button class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#selectRekeningModal">
-        <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Kuitansi
+    <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#selectRekeningModal">
+        <i class="fas fa-plus fa-sm text-white-50"></i> <span class="d-none d-sm-inline">Tambah Kuitansi</span><span class="d-inline d-sm-none">Tambah</span>
     </button>
 </div>
 
@@ -237,9 +237,6 @@
                                list="kodeObjekPajakList"
                                autocomplete="off">
                         <datalist id="kodeObjekPajakList">
-                            @php
-                                $kodeObjekPajaks = \DB::table('kode_objek_pajaks')->orderBy('kode')->get();
-                            @endphp
                             @foreach($kodeObjekPajaks as $kop)
                                 <option value="{{ $kop->kode }}" label="{{ $kop->nama }} ({{ $kop->tarif }}%)">
                             @endforeach
@@ -327,11 +324,11 @@
                             Tambahkan Nama Bendahara Barang
                         </label>
                     </div>
-                    <div class="form-group" id="bendahara_field" style="display:none;">
-                        <label for="nama_bendahara_barang">Nama Bendahara Barang</label>
-                        <input type="text" class="form-control" id="nama_bendahara_barang" name="nama_bendahara_barang" placeholder="Masukkan nama bendahara barang">
-                        <small class="form-text text-muted">Nama bendahara barang akan ditampilkan di kuitansi</small>
+                    <div class="alert alert-info" id="bendahara_info" style="display:none;">
+                        <strong>Bendahara Barang:</strong> <span id="display_bendahara_nama"></span>
                     </div>
+                    <input type="hidden" id="nama_bendahara_barang" name="nama_bendahara_barang">
+                    <input type="hidden" id="nip_bendahara_barang" name="nip_bendahara_barang">
                     <!-- Items Section -->
                     <div class="form-group">
                         <label>Item Barang</label>
@@ -523,22 +520,6 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_nama_pptk">Nama PPTK (Snapshot)</label>
-                                <input type="text" class="form-control" id="edit_nama_pptk" readonly>
-                                <small class="form-text text-muted">Snapshot nama PPTK saat kuitansi dibuat</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_nip_pptk">NIP PPTK (Snapshot)</label>
-                                <input type="text" class="form-control" id="edit_nip_pptk" readonly>
-                                <small class="form-text text-muted">Snapshot NIP PPTK saat kuitansi dibuat</small>
-                            </div>
-                        </div>
-                    </div>
                     <!-- Bendahara Barang Section -->
                     <div class="form-group">
                         <label for="edit_bendahara_checkbox">
@@ -546,11 +527,11 @@
                             Tambahkan Nama Bendahara Barang
                         </label>
                     </div>
-                    <div class="form-group" id="edit_bendahara_field" style="display:none;">
-                        <label for="edit_nama_bendahara_barang">Nama Bendahara Barang</label>
-                        <input type="text" class="form-control" id="edit_nama_bendahara_barang" name="nama_bendahara_barang" placeholder="Masukkan nama bendahara barang">
-                        <small class="form-text text-muted">Nama bendahara barang akan ditampilkan di kuitansi</small>
+                    <div class="alert alert-info" id="edit_bendahara_info" style="display:none;">
+                        <strong>Bendahara Barang:</strong> <span id="edit_display_bendahara_nama"></span>
                     </div>
+                    <input type="hidden" id="edit_nama_bendahara_barang" name="nama_bendahara_barang">
+                    <input type="hidden" id="edit_nip_bendahara_barang" name="nip_bendahara_barang">
                     <!-- Items Section -->
                     <div class="form-group">
                         <label>Item Barang</label>
@@ -583,6 +564,8 @@
 @endsection
 
 @push('styles')
+<!-- DataTables Responsive CSS -->
+<link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css" rel="stylesheet" />
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
@@ -593,6 +576,9 @@
 @endpush
 
 @push('scripts')
+<!-- DataTables Responsive JS -->
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <!-- SweetAlert2 JS -->
@@ -771,40 +757,9 @@ $('#addkuitansiModal').on('hidden.bs.modal', function() {
     }
 });
 
-// Parse periode_lengkap (format: "TU-1" -> periode_type: "TU", periode_number: 1)
-function parsePeriodeLengkap(value) {
-    const parts = value.split('-');
-    return {
-        periode_type: parts[0],
-        periode_number: parseInt(parts[1])
-    };
-}
-
 // Format periode_lengkap back to "TU-1" format
 function formatPeriodeLengkap(periodeType, periodeNumber) {
     return `${periodeType}-${periodeNumber}`;
-}
-
-// Auto-fill next periode number when periode_type changes
-function updatePeriodeNumber(elementId, editMode = false) {
-    const periodeTypeInput = editMode ? '#edit_periode_type' : '#periode_type';
-    const periodeNumberInput = editMode ? '#edit_periode_number' : '#periode_number';
-    
-    const periodeType = $(periodeTypeInput).val();
-    
-    if (periodeType) {
-        $.ajax({
-            url: '{{ route("kuitansi.getNextPeriode") }}',
-            type: 'GET',
-            data: { periode_type: periodeType },
-            success: function(response) {
-                $(periodeNumberInput).val(response.next_number);
-            },
-            error: function() {
-                console.error('Failed to get next periode number');
-            }
-        });
-    }
 }
 
 // Add item row to add modal
@@ -862,6 +817,7 @@ function updateAddFormBefore(event) {
     
     if (!document.getElementById('bendahara_checkbox').checked) {
         document.getElementById('nama_bendahara_barang').value = '';
+        document.getElementById('nip_bendahara_barang').value = '';
     }
     updateItemsJson();
     // Submit the form
@@ -888,6 +844,7 @@ function updateEditFormBefore(event) {
     
     if (!document.getElementById('edit_bendahara_checkbox').checked) {
         document.getElementById('edit_nama_bendahara_barang').value = '';
+        document.getElementById('edit_nip_bendahara_barang').value = '';
     }
     updateEditItemsJson();
     // Submit the form
@@ -895,23 +852,44 @@ function updateEditFormBefore(event) {
 }
 
 $(document).ready(function() {
+    // Bendahara Barang data from controller
+    const bendaharaBarang = @json($bendaharaBarang ?? null);
+    
     // Handle bendahara checkbox toggle (add modal)
     $('#bendahara_checkbox').on('change', function() {
         if ($(this).prop('checked')) {
-            $('#bendahara_field').slideDown(300);
+            if (bendaharaBarang) {
+                $('#nama_bendahara_barang').val(bendaharaBarang.nama);
+                $('#nip_bendahara_barang').val(bendaharaBarang.nip);
+                $('#display_bendahara_nama').text(bendaharaBarang.nama + ' - ' + bendaharaBarang.jabatan);
+                $('#bendahara_info').slideDown(300);
+            } else {
+                alert('Tidak ada staff dengan status Bendahara Barang. Silakan tambahkan terlebih dahulu di menu Staff.');
+                $(this).prop('checked', false);
+            }
         } else {
-            $('#bendahara_field').slideUp(300);
-            $('#nama_bendahara_barang').val(''); // Clear value when unchecked
+            $('#bendahara_info').slideUp(300);
+            $('#nama_bendahara_barang').val('');
+            $('#nip_bendahara_barang').val('');
         }
     });
 
     // Handle edit bendahara checkbox toggle (edit modal)
     $('#edit_bendahara_checkbox').on('change', function() {
         if ($(this).prop('checked')) {
-            $('#edit_bendahara_field').slideDown(300);
+            if (bendaharaBarang) {
+                $('#edit_nama_bendahara_barang').val(bendaharaBarang.nama);
+                $('#edit_nip_bendahara_barang').val(bendaharaBarang.nip);
+                $('#edit_display_bendahara_nama').text(bendaharaBarang.nama + ' - ' + bendaharaBarang.jabatan);
+                $('#edit_bendahara_info').slideDown(300);
+            } else {
+                alert('Tidak ada staff dengan status Bendahara Barang. Silakan tambahkan terlebih dahulu di menu Staff.');
+                $(this).prop('checked', false);
+            }
         } else {
-            $('#edit_bendahara_field').slideUp(300);
-            $('#edit_nama_bendahara_barang').val(''); // Clear value when unchecked
+            $('#edit_bendahara_info').slideUp(300);
+            $('#edit_nama_bendahara_barang').val('');
+            $('#edit_nip_bendahara_barang').val('');
         }
     });
 
@@ -1013,22 +991,22 @@ $(document).ready(function() {
             $('#edit_untuk_pembayaran').val(data.untuk_pembayaran);
             $('#edit_pptk_1_id').val(data.pptk_1_id).trigger('change');
             
-            // Set snapshot fields with fallback to pptk relation if snapshot is empty
-            const namaPptkSnapshot = data.nama_pptk || (data.pptk ? data.pptk.nama : '');
-            const nipPptkSnapshot = data.nip_pptk || (data.pptk ? data.pptk.nip : '');
-            
-            $('#edit_nama_pptk').prop('readonly', false).val(namaPptkSnapshot).prop('readonly', true);
-            $('#edit_nip_pptk').prop('readonly', false).val(nipPptkSnapshot).prop('readonly', true);
-            
-            // Set bendahara barang if exists
+            // Set bendahara barang checkbox if exists
             if (data.nama_bendahara_barang) {
-                document.getElementById('edit_bendahara_checkbox').checked = true;
-                document.getElementById('edit_nama_bendahara_barang').value = data.nama_bendahara_barang;
-                $('#edit_bendahara_field').show();
+                $('#edit_bendahara_checkbox').prop('checked', true);
+                $('#edit_nama_bendahara_barang').val(data.nama_bendahara_barang);
+                $('#edit_nip_bendahara_barang').val(data.nip_bendahara_barang || '');
+                if (bendaharaBarang) {
+                    $('#edit_display_bendahara_nama').text(bendaharaBarang.nama + ' - ' + bendaharaBarang.jabatan);
+                } else {
+                    $('#edit_display_bendahara_nama').text(data.nama_bendahara_barang);
+                }
+                $('#edit_bendahara_info').show();
             } else {
-                document.getElementById('edit_bendahara_checkbox').checked = false;
-                document.getElementById('edit_nama_bendahara_barang').value = '';
-                $('#edit_bendahara_field').hide();
+                $('#edit_bendahara_checkbox').prop('checked', false);
+                $('#edit_nama_bendahara_barang').val('');
+                $('#edit_nip_bendahara_barang').val('');
+                $('#edit_bendahara_info').hide();
             }
             
             // Set kode_objek_pajak if exists

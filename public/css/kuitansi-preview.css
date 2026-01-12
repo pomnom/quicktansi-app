@@ -59,7 +59,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial', sans-serif !important;
+    font-family: "Arial", sans-serif !important;
 }
 
 body {
@@ -106,7 +106,8 @@ body {
     gap: 8px;
 }
 
-.toolbar button, .toolbar a {
+.toolbar button,
+.toolbar a {
     background: none;
     border: none;
     cursor: pointer;
@@ -121,16 +122,19 @@ body {
     text-decoration: none;
 }
 
-.toolbar button:hover, .toolbar a:hover {
+.toolbar button:hover,
+.toolbar a:hover {
     background: #f5f5f5;
     color: #333;
 }
 
-.toolbar button.primary, .toolbar a.primary {
+.toolbar button.primary,
+.toolbar a.primary {
     color: #1f73e6;
 }
 
-.toolbar button.primary:hover, .toolbar a.primary:hover {
+.toolbar button.primary:hover,
+.toolbar a.primary:hover {
     background: #e8f0fe;
 }
 
@@ -429,6 +433,184 @@ body {
     .preview-page {
         box-shadow: none;
         width: 100%;
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN FOR PREVIEW
+   ======================================== */
+
+/* Tablet and below */
+@media (max-width: 991px) {
+    .toolbar {
+        padding: 10px 15px;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-title {
+        font-size: 14px;
+    }
+
+    .preview-container {
+        padding: 15px;
+    }
+
+    .preview-page {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .document-content {
+        padding: 20px;
+    }
+}
+
+/* Mobile devices */
+@media (max-width: 767px) {
+    .toolbar {
+        padding: 8px 10px;
+        gap: 10px;
+    }
+
+    .toolbar-left,
+    .toolbar-center,
+    .toolbar-right {
+        flex: 1;
+    }
+
+    .toolbar-title {
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .toolbar button,
+    .toolbar a {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    .zoom-control {
+        padding: 4px 8px;
+    }
+
+    .zoom-value {
+        font-size: 12px;
+    }
+
+    .preview-container {
+        padding: 10px;
+    }
+
+    .preview-page {
+        transform-origin: top center;
+        margin: 0;
+    }
+
+    .document-content {
+        padding: 15px;
+        font-size: 10px;
+    }
+
+    /* Make tables scrollable horizontally on mobile */
+    .info-table,
+    .content-table,
+    .items-table,
+    .signature-table {
+        font-size: 9px;
+    }
+
+    .kuitansi-title {
+        font-size: 18px;
+        margin: 15px 0;
+    }
+
+    .signature-table .signature-cell {
+        padding: 5px;
+    }
+
+    .signature-table .role-title {
+        font-size: 9px;
+    }
+
+    .signature-table .role-subtitle {
+        font-size: 8px;
+        min-height: 25px;
+    }
+
+    .signature-table .sig-name {
+        font-size: 9px;
+        margin: 40px 0 2px 0;
+    }
+
+    .signature-table .sig-nip {
+        font-size: 8px;
+    }
+
+    .items-table th,
+    .items-table td {
+        padding: 4px 2px;
+        font-size: 8px;
+    }
+}
+
+/* Very small devices */
+@media (max-width: 480px) {
+    .toolbar {
+        padding: 6px 8px;
+    }
+
+    .toolbar button .icon {
+        font-size: 16px;
+    }
+
+    .toolbar-center .zoom-control {
+        display: none; /* Hide zoom control on very small screens */
+    }
+
+    .document-content {
+        padding: 10px;
+        font-size: 9px;
+    }
+
+    .kuitansi-title {
+        font-size: 16px;
+        margin: 10px 0;
+    }
+
+    .info-table,
+    .content-table {
+        font-size: 8px;
+    }
+
+    .items-table {
+        font-size: 7px;
+    }
+
+    .items-table th,
+    .items-table td {
+        padding: 3px 1px;
+        font-size: 7px;
+    }
+
+    .signature-table {
+        margin-top: 20px;
+    }
+
+    .signature-table .sig-name {
+        margin: 30px 0 2px 0;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+    .preview-container {
+        padding: 5px;
+    }
+
+    .toolbar {
+        padding: 6px 10px;
     }
 }
 

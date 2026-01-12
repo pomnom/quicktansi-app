@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kegiatan;
+use App\Models\KodeRekening;
 use App\Models\Kuitansi;
 use App\Models\Rekanan;
 use App\Models\Staff;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\SubKegiatan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class KuitansiController extends Controller
 {
@@ -15,7 +18,9 @@ class KuitansiController extends Controller
         $kuitansis = Kuitansi::with('rekanan')->get();
         $rekanans = Rekanan::all();
         $pptks = Staff::where('status', 'PPTK')->get();
-        return view('kuitansi', compact('kuitansis', 'rekanans', 'pptks'));
+        $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->first();
+        $kodeObjekPajaks = DB::table('kode_objek_pajaks')->orderBy('kode')->get();
+        return view('kuitansi', compact('kuitansis', 'rekanans', 'pptks', 'bendaharaBarang', 'kodeObjekPajaks'));
     }
 
     public function getNextPeriodeNumber(Request $request)
@@ -29,7 +34,6 @@ class KuitansiController extends Controller
         // Get the highest periode_number for this periode_type
         // This is to show user what the last periode number was, not for auto-numbering kuitansi
         $lastKuitansi = Kuitansi::where('periode_type', $periodeType)
-            ->where('periode_type', $periodeType)
             ->orderBy('periode_number', 'desc')
             ->orderBy('nomor_urut', 'desc')
             ->first();
@@ -119,17 +123,12 @@ class KuitansiController extends Controller
         
         // Handle nama_bendahara_barang from form input (if provided)
         $namaBendaharaBarang = null;
+        $nipBendaharaBarang = null;
         if ($request->filled('nama_bendahara_barang')) {
             $namaBendaharaBarang = $request->nama_bendahara_barang;
+            $nipBendaharaBarang = $request->nip_bendahara_barang;
         }
         
-        // Get next nomor_urut for this periode
-        $lastInPeriode = Kuitansi::where('periode_type', $periodeType)
-            ->where('periode_number', $periodeNumber)
-            ->orderBy('nomor_urut', 'desc')
-            ->first();
-        
-        // Jika nomor_urut sudah ada, gunakan yang ada, jika belum cek apakah valid
         $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
         
         Kuitansi::create([
@@ -158,7 +157,7 @@ class KuitansiController extends Controller
             'nama_bendahara_pengeluaran' => $bendaharaPengeluaran->nama ?? null,
             'nip_bendahara_pengeluaran' => $bendaharaPengeluaran->nip ?? null,
             'nama_bendahara_barang' => $namaBendaharaBarang,
-            'nip_bendahara_barang' => null,
+            'nip_bendahara_barang' => $nipBendaharaBarang,
             'nama_pptk' => $pptk->nama,
             'nip_pptk' => $pptk->nip,
         ]);
@@ -242,8 +241,10 @@ class KuitansiController extends Controller
         
         // Handle nama_bendahara_barang from form input (if provided)
         $namaBendaharaBarang = null;
+        $nipBendaharaBarang = null;
         if ($request->filled('nama_bendahara_barang')) {
             $namaBendaharaBarang = $request->nama_bendahara_barang;
+            $nipBendaharaBarang = $request->nip_bendahara_barang;
         }
         
         // Generate noBuku dengan periode dan nomor_urut yang baru diinput
@@ -275,7 +276,7 @@ class KuitansiController extends Controller
             'nama_bendahara_pengeluaran' => $bendaharaPengeluaran->nama ?? null,
             'nip_bendahara_pengeluaran' => $bendaharaPengeluaran->nip ?? null,
             'nama_bendahara_barang' => $namaBendaharaBarang,
-            'nip_bendahara_barang' => null,
+            'nip_bendahara_barang' => $nipBendaharaBarang,
             'nama_pptk' => $pptk->nama,
             'nip_pptk' => $pptk->nip,
         ]);
@@ -305,8 +306,7 @@ class KuitansiController extends Controller
     // API endpoints for cascading selects
     public function getKegiatan()
     {
-        $kegiatan = \DB::table('kegiatan')
-            ->select('id_giat', 'kode_giat', 'nama_giat')
+        $kegiatan = Kegiatan::select('id_giat', 'kode_giat', 'nama_giat')
             ->groupBy('id_giat', 'kode_giat', 'nama_giat')
             ->orderBy('kode_giat')
             ->get();
@@ -318,8 +318,7 @@ class KuitansiController extends Controller
     {
         $idGiat = $request->query('id_giat');
         
-        $subKegiatan = \DB::table('sub_kegiatan')
-            ->select('id_sub_giat', 'kode_sub_giat', 'nama_sub_giat')
+        $subKegiatan = SubKegiatan::select('id_sub_giat', 'kode_sub_giat', 'nama_sub_giat')
             ->where('id_giat', $idGiat)
             ->groupBy('id_sub_giat', 'kode_sub_giat', 'nama_sub_giat')
             ->orderBy('kode_sub_giat')
@@ -332,8 +331,7 @@ class KuitansiController extends Controller
     {
         $idSubGiat = $request->query('id_sub_giat');
         
-        $kodeRekening = \DB::table('kode_rekening')
-            ->select('id_akun', 'kode_akun', 'nama_akun', 'nilai_anggaran')
+        $kodeRekening = KodeRekening::select('id_akun', 'kode_akun', 'nama_akun', 'nilai_anggaran')
             ->where('id_sub_giat', $idSubGiat)
             ->orderBy('kode_akun')
             ->get();
@@ -343,7 +341,7 @@ class KuitansiController extends Controller
 
     public function getTarifPajak(string $kode)
     {
-        $kodeObjekPajak = \DB::table('kode_objek_pajaks')
+        $kodeObjekPajak = DB::table('kode_objek_pajaks')
             ->where('kode', $kode)
             ->first();
 
@@ -377,14 +375,6 @@ class KuitansiController extends Controller
         // NPWP Pemotong - ambil dari config atau database
         $npwpPemotong = env('NPWP_INSTANSI', '0002928463912000');
         $idTkuPemotong = $npwpPemotong . '000000';
-
-        $xmlData = [
-            'npwp_pemotong' => $npwpPemotong,
-            'id_tku_pemotong' => $idTkuPemotong,
-            'kuitansis' => $kuitansis,
-            'bulan' => $bulan,
-            'tahun' => $tahun,
-        ];
 
         // Build XML menggunakan SimpleXMLElement
         $xmlObj = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><BpuBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"></BpuBulk>');
@@ -443,13 +433,6 @@ class KuitansiController extends Controller
 
         if ($validKuitansis->isEmpty()) {
             return back()->with('error', 'Tidak ada kuitansi dengan belanja ≥ 2.000.000 dan data BuPot lengkap di antara pilihan Anda. Hanya kuitansi dengan belanja ≥ 2.000.000 yang perlu dibuatkan BuPot.');
-        }
-
-        // Notifikasi jika ada yang di-skip
-        $skippedCount = count($allSelected) - count($validKuitansis);
-        $successMessage = "XML berhasil di-export dengan " . count($validKuitansis) . " kuitansi";
-        if ($skippedCount > 0) {
-            $successMessage .= " (" . $skippedCount . " kuitansi di-skip: belanja < 2M atau data BuPot tidak lengkap)";
         }
 
         // NPWP Pemotong - ambil dari config atau database

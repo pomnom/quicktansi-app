@@ -159,6 +159,41 @@
     @endif
 
     <script>
+        // Auto-collapse sidebar on mobile
+        $(document).ready(function() {
+            function handleSidebarResponsive() {
+                if ($(window).width() < 768) {
+                    // On mobile, toggle sidebar to collapsed by default
+                    $('body').addClass('sidebar-toggled');
+                    $('.sidebar').addClass('toggled');
+                } else {
+                    // On desktop, expand sidebar
+                    $('body').removeClass('sidebar-toggled');
+                    $('.sidebar').removeClass('toggled');
+                }
+            }
+            
+            // Run on page load
+            handleSidebarResponsive();
+            
+            // Run on window resize
+            $(window).on('resize', function() {
+                handleSidebarResponsive();
+            });
+            
+            // Close sidebar when clicking outside on mobile
+            if ($(window).width() < 768) {
+                $(document).on('click', function(e) {
+                    if (!$(e.target).closest('.sidebar, #sidebarToggle, #sidebarToggleTop').length) {
+                        if (!$('.sidebar').hasClass('toggled')) {
+                            $('body').addClass('sidebar-toggled');
+                            $('.sidebar').addClass('toggled');
+                        }
+                    }
+                });
+            }
+        });
+        
         // SweetAlert for success/error messages
         @if(session('success'))
             Swal.fire({
