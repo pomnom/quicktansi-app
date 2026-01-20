@@ -56,7 +56,7 @@
             <tr>
                 <td class="label">Tanggal Dibukukan</td>
                 <td class="colon">:</td>
-                <td class="value">{{ $kuitansi->tanggal_kuitansi ? \Carbon\Carbon::parse($kuitansi->tanggal_kuitansi)->format('d-m-Y') : 'N/A' }}</td>
+                <td class="value"></td>
             </tr>
             <tr>
                 <td class="label">No. Buku</td>
