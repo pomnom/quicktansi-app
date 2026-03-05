@@ -38,13 +38,10 @@ class KuitansiSeeder extends Seeder
             return;
         }
 
-        // Ambil kode pajak spesifik untuk PPh 22 dan PPh 23 (fallback ke prefix jika exact match tidak ada)
-        $taxCode22 = \DB::table('kode_objek_pajaks')->where('kode', '22-910-01')->first()
-            ?? \DB::table('kode_objek_pajaks')->where('kode', 'like', '22-%')->first();
-        $taxCode23 = \DB::table('kode_objek_pajaks')->where('kode', '24-104-01')->first()
-            ?? \DB::table('kode_objek_pajaks')->where('kode', 'like', '24-%')->first();
-
-        if (!$taxCode22 || !$taxCode23) {
+        // Load kode objek pajak dari database
+        $allTaxCodes = \DB::table('kode_objek_pajaks')->get()->keyBy('kode');
+        
+        if ($allTaxCodes->isEmpty()) {
             echo "Tidak ada kode objek pajak. Jalankan KodeObjekPajakSeeder terlebih dahulu.\n";
             return;
         }
@@ -62,13 +59,16 @@ class KuitansiSeeder extends Seeder
             }
             $dpp = (int) round($dpp);
 
-            $ppn = $dpp > 2000000 ? (int) ceil($dpp * 0.11) : 0;
+            // PPN hanya untuk belanja ≥ 2 juta
+            $ppn = $dpp >= 2000000 ? (int) ceil($dpp * 0.11) : 0;
 
             $pph = 0;
             if (!empty($jenisPph) && $tarifPajak) {
-                if ($jenisPph === '22' && $dpp <= 2000000) {
-                    $pph = 0; // Tidak kena pajak
+                if ($jenisPph === '22' && $dpp < 2000000) {
+                    // PPH 22 tidak dipotong untuk DPP < 2 juta
+                    $pph = 0;
                 } else {
+                    // PPH 23 dan PPH 22 (untuk DPP ≥ 2 juta) dipotong sesuai tarif
                     $pph = (int) round($dpp * $tarifPajak / 100);
                 }
             }
@@ -84,60 +84,199 @@ class KuitansiSeeder extends Seeder
             ];
         };
 
+        /**
+         * Dataset kuitansi dengan skenario beragam:
+         * - TU dan GU
+         * - Mix PPH 22 (pembelian barang), PPH 23 (jasa), dan tanpa PPH
+         * - Variasi nilai: di bawah 2M (no PPN/PPH22) dan di atas 2M (dengan PPN)
+         * - Kode objek pajak yang realistis sesuai jenis transaksi
+         */
         $dataset = [
-            // GU 1 (6 records)
-            ['periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 1, 'jenis_pph' => '22', 'items' => [ ['nama' => 'Monitor LED 24 inch', 'jumlah' => 2, 'harga_satuan' => 700000 ] ]], // 1.4M
-            ['periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 2, 'jenis_pph' => '22', 'items' => [ ['nama' => 'Laptop Ultrabook', 'jumlah' => 1, 'harga_satuan' => 2600000 ] ]], // 2.6M
-            ['periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 3, 'jenis_pph' => '23', 'items' => [ ['nama' => 'Jasa Instalasi Jaringan', 'jumlah' => 1, 'harga_satuan' => 3100000 ] ]], // 3.1M
-            ['periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 4, 'jenis_pph' => null, 'items' => [ ['nama' => 'ATK Campuran', 'jumlah' => 1, 'harga_satuan' => 800000 ] ]], // 0.8M
-            ['periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 5, 'jenis_pph' => '23', 'items' => [ ['nama' => 'Jasa Cleaning Office', 'jumlah' => 1, 'harga_satuan' => 1900000 ] ]], // 1.9M
-            ['periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 6, 'jenis_pph' => '22', 'items' => [ ['nama' => 'PC Workstation', 'jumlah' => 1, 'harga_satuan' => 2100000 ] ]], // 2.1M
+            // === TU-1: Belanja modal dan ATK kecil ===
+            [
+                'periode_type' => 'TU', 'periode_number' => 1, 'nomor_urut' => 1,
+                'kode_pajak' => null, // Tidak ada pajak (belanja kecil)
+                'items' => [
+                    ['nama' => 'Kertas HVS A4 80gr (10 rim)', 'jumlah' => 10, 'harga_satuan' => 45000],
+                    ['nama' => 'Tinta Printer HP Original', 'jumlah' => 5, 'harga_satuan' => 85000],
+                    ['nama' => 'Stapler Joyko HD-10D', 'jumlah' => 15, 'harga_satuan' => 12000],
+                ],
+                'pembayaran' => 'Pengadaan Alat Tulis Kantor (ATK) Triwulan I Tahun 2026'
+            ],
+            [
+                'periode_type' => 'TU', 'periode_number' => 1, 'nomor_urut' => 2,
+                'kode_pajak' => '22-910-01', // Pemungutan bendahara 1.5%
+                'items' => [
+                    ['nama' => 'Laptop ASUS TUF Gaming F15', 'jumlah' => 2, 'harga_satuan' => 12500000],
+                ],
+                'pembayaran' => 'Pengadaan Laptop untuk Kepala Seksi Perencanaan dan Seksi Keuangan'
+            ],
+            [
+                'periode_type' => 'TU', 'periode_number' => 1, 'nomor_urut' => 3,
+                'kode_pajak' => '24-104-28', // Jasa instalasi 2%
+                'items' => [
+                    ['nama' => 'Jasa Instalasi Jaringan LAN Gedung Kantor', 'jumlah' => 1, 'harga_satuan' => 8500000],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Instalasi Jaringan LAN Gedung Kantor Lantai 1-3'
+            ],
 
-            // GU 2 (6 records)
-            ['periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 1, 'jenis_pph' => null, 'items' => [ ['nama' => 'Tinta Printer', 'jumlah' => 20, 'harga_satuan' => 25000 ] ]], // 0.5M
-            ['periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 2, 'jenis_pph' => '22', 'items' => [ ['nama' => 'Server Rackmount', 'jumlah' => 1, 'harga_satuan' => 4200000 ] ]], // 4.2M
-            ['periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 3, 'jenis_pph' => '23', 'items' => [ ['nama' => 'Jasa Konsultan IT', 'jumlah' => 1, 'harga_satuan' => 2400000 ] ]], // 2.4M
-            ['periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 4, 'jenis_pph' => '22', 'items' => [ ['nama' => 'Kursi Ergonomis', 'jumlah' => 2, 'harga_satuan' => 850000 ] ]], // 1.7M
-            ['periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 5, 'jenis_pph' => '23', 'items' => [ ['nama' => 'Jasa Pelatihan Software', 'jumlah' => 1, 'harga_satuan' => 3600000 ] ]], // 3.6M
-            ['periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 6, 'jenis_pph' => '22', 'items' => [ ['nama' => 'Kipas Angin Industri', 'jumlah' => 3, 'harga_satuan' => 300000 ] ]], // 0.9M
+            // === TU-2: Jasa dan operasional ===
+            [
+                'periode_type' => 'TU', 'periode_number' => 2, 'nomor_urut' => 1,
+                'kode_pajak' => null,
+                'items' => [
+                    ['nama' => 'Tinta Canon GI-790 Black', 'jumlah' => 12, 'harga_satuan' => 65000],
+                    ['nama' => 'Flashdisk Sandisk 32GB', 'jumlah' => 20, 'harga_satuan' => 55000],
+                ],
+                'pembayaran' => 'Pengadaan Supplies Kantor Bulanan Februari 2026'
+            ],
+            [
+                'periode_type' => 'TU', 'periode_number' => 2, 'nomor_urut' => 2,
+                'kode_pajak' => '24-104-39', // Jasa katering 2%
+                'items' => [
+                    ['nama' => 'Catering Rapat Koordinasi (50 pax x 3 hari)', 'jumlah' => 150, 'harga_satuan' => 35000],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Katering Rapat Koordinasi Regional Tanggal 10-12 Februari 2026'
+            ],
+            [
+                'periode_type' => 'TU', 'periode_number' => 2, 'nomor_urut' => 3,
+                'kode_pajak' => '24-104-24', // Jasa software/hardware 2%
+                'items' => [
+                    ['nama' => 'Jasa Maintenance Server & Backup System', 'jumlah' => 1, 'harga_satuan' => 4800000],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Perawatan dan Maintenance Server serta Sistem Backup Periode Januari-Maret 2026'
+            ],
+
+            // === GU-1: Proyek konstruksi dan konsultansi ===
+            [
+                'periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 1,
+                'kode_pajak' => '28-409-25', // Konstruksi terintegrasi bersertifikat 2.65%
+                'items' => [
+                    ['nama' => 'Pekerjaan Renovasi Gedung Kantor Lt. 2 (Progress 30%)', 'jumlah' => 1, 'harga_satuan' => 85000000],
+                ],
+                'pembayaran' => 'Pembayaran Termin I (30%) Pekerjaan Renovasi Gedung Kantor Lantai 2 sesuai Kontrak No. 245/SPK/2026'
+            ],
+            [
+                'periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 2,
+                'kode_pajak' => '28-409-27', // Konsultansi konstruksi bersertifikat 3.5%
+                'items' => [
+                    ['nama' => 'Jasa Konsultan Pengawas Proyek Renovasi', 'jumlah' => 1, 'harga_satuan' => 15000000],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Konsultan Pengawas Proyek Renovasi Gedung Periode Januari-Maret 2026'
+            ],
+            [
+                'periode_type' => 'GU', 'periode_number' => 1, 'nomor_urut' => 3,
+                'kode_pajak' => '24-104-01', // Jasa teknik 2%
+                'items' => [
+                    ['nama' => 'Jasa Survey dan Pemetaan Lahan', 'jumlah' => 1, 'harga_satuan' => 12500000],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Survey dan Pemetaan Lahan untuk Rencana Pembangunan Gedung Baru'
+            ],
+
+            // === GU-2: Pelatihan, hukum, dan pencetakan ===
+            [
+                'periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 1,
+                'kode_pajak' => '24-104-07', // Jasa hukum 2%
+                'items' => [
+                    ['nama' => 'Jasa Konsultan Hukum Penyelesaian Sengketa Lahan', 'jumlah' => 1, 'harga_satuan' => 18000000],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Konsultan Hukum Penanganan Sengketa Lahan Sesuai Perjanjian No. 089/HK/2026'
+            ],
+            [
+                'periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 2,
+                'kode_pajak' => '24-104-54', // Jasa pencetakan 2%
+                'items' => [
+                    ['nama' => 'Cetak Buku Laporan Tahunan 2025 (Full Color, 500 eksemplar)', 'jumlah' => 500, 'harga_satuan' => 12500],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Pencetakan Buku Laporan Tahunan 2025 sebanyak 500 eksemplar'
+            ],
+            [
+                'periode_type' => 'GU', 'periode_number' => 2, 'nomor_urut' => 3,
+                'kode_pajak' => '24-104-06', // Jasa akuntansi 2%
+                'items' => [
+                    ['nama' => 'Jasa Audit Keuangan Internal Tahun 2025', 'jumlah' => 1, 'harga_satuan' => 22000000],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Audit Keuangan Internal Tahun Anggaran 2025'
+            ],
+
+            // === TU-3: Pemeliharaan dan operasional rutin ===
+            [
+                'periode_type' => 'TU', 'periode_number' => 3, 'nomor_urut' => 1,
+                'kode_pajak' => '24-104-30', // Jasa perawatan kendaraan 2%
+                'items' => [
+                    ['nama' => 'Service Berkala Kendaraan Dinas (5 unit)', 'jumlah' => 5, 'harga_satuan' => 850000],
+                ],
+                'pembayaran' => 'Pembayaran Jasa Service Berkala Kendaraan Dinas Triwulan I Tahun 2026'
+            ],
+            [
+                'periode_type' => 'TU', 'periode_number' => 3, 'nomor_urut' => 2,
+                'kode_pajak' => null,
+                'items' => [
+                    ['nama' => 'Bahan Pembersih dan Kebersihan Kantor', 'jumlah' => 1, 'harga_satuan' => 1250000],
+                ],
+                'pembayaran' => 'Pengadaan Bahan Kebersihan untuk Keperluan Operasional Kantor Bulan Maret 2026'
+            ],
+            [
+                'periode_type' => 'TU', 'periode_number' => 3, 'nomor_urut' => 3,
+                'kode_pajak' => '22-910-01', // Pembelian barang bendahara 1.5%
+                'items' => [
+                    ['nama' => 'AC Split 2 PK Daikin Inverter', 'jumlah' => 3, 'harga_satuan' => 7500000],
+                ],
+                'pembayaran' => 'Pengadaan AC Split untuk Ruang Rapat dan Ruang Kepala Dinas'
+            ],
         ];
 
+        // Variasi tanggal untuk distribusi data lintas bulan
         $datePool = [
-            Carbon::create(2026, 1, 10),
-            Carbon::create(2026, 1, 18),
-            Carbon::create(2026, 1, 27),
-            Carbon::create(2026, 2, 5),
-            Carbon::create(2026, 2, 14),
-            Carbon::create(2026, 2, 28),
-            Carbon::create(2026, 3, 8),
-            Carbon::create(2026, 3, 19),
-            Carbon::create(2026, 3, 30),
-            Carbon::create(2026, 4, 10),
-            Carbon::create(2026, 4, 20),
-            Carbon::create(2026, 4, 30),
+            Carbon::create(2026, 1, 15),
+            Carbon::create(2026, 1, 22),
+            Carbon::create(2026, 1, 28),
+            Carbon::create(2026, 2, 8),
+            Carbon::create(2026, 2, 18),
+            Carbon::create(2026, 2, 25),
+            Carbon::create(2026, 3, 5),
+            Carbon::create(2026, 3, 12),
+            Carbon::create(2026, 3, 20),
+            Carbon::create(2026, 3, 28),
         ];
 
+        // Process each kuitansi
         foreach ($dataset as $i => $data) {
-            $tanggalKuitansi = $datePool[$i % count($datePool)]; // variasi tanggal lintas bulan
-
+            $tanggalKuitansi = $datePool[$i % count($datePool)];
+            
             $items = $data['items'];
-            $jenisPph = $data['jenis_pph'];
-
+            $kodePajak = $data['kode_pajak']; // Full kode like '22-910-01' atau null
+            
+            // Determine jenis_pph and tarif from kode_pajak
+            $jenisPph = null;
             $tarifPajak = null;
-            if ($jenisPph === '23') {
-                $tarifPajak = (float) $taxCode23->tarif;
-            } elseif ($jenisPph === '22') {
-                $tarifPajak = (float) $taxCode22->tarif;
+            $kodeObjekPajak = null;
+            
+            if ($kodePajak && isset($allTaxCodes[$kodePajak])) {
+                $taxData = $allTaxCodes[$kodePajak];
+                $kodeObjekPajak = $taxData->kode;
+                $tarifPajak = (float) $taxData->tarif;
+                
+                // Determine jenis_pph (22 or 23) from kode prefix
+                if (str_starts_with($kodePajak, '22-')) {
+                    $jenisPph = '22';
+                } elseif (str_starts_with($kodePajak, '24-') || str_starts_with($kodePajak, '28-') || str_starts_with($kodePajak, '29-')) {
+                    $jenisPph = '23';
+                }
             }
-
+            
+            // Calculate pajak using the helper
             $pajak = $computePajak($items, $jenisPph, $tarifPajak);
-
+            
+            // Random selection
             $kodeRekening = $kodeRekenings->random();
             $rekanan = $rekanans->random();
             $pptk = ($pptks->isNotEmpty() ? $pptks : $allStaff)->random();
-
-            $noBuku = $data['periode_type'] . ' ' . $data['periode_number'] . ' / ' . str_pad($data['nomor_urut'], 3, '0', STR_PAD_LEFT);
-
+            
+            // Generate no_buku
+            $noBuku = $data['periode_type'] . '-' . $data['periode_number'] . '-' . str_pad($data['nomor_urut'], 3, '0', STR_PAD_LEFT);
+            
+            // Build payload
             $payload = [
                 'nomor_rekening' => $kodeRekening->kode_akun,
                 'id_akun' => $kodeRekening->id_akun,
@@ -152,7 +291,9 @@ class KuitansiSeeder extends Seeder
                 'ppn' => $pajak['ppn'],
                 'pph' => $pajak['pph'],
                 'jenis_pph' => $jenisPph,
-                'untuk_pembayaran' => $items[0]['nama'],
+                'kode_objek_pajak' => $kodeObjekPajak,
+                'tarif_pajak' => $tarifPajak,
+                'untuk_pembayaran' => $data['pembayaran'],
                 'total_akhir' => $pajak['total_akhir'],
                 'rincian_item' => $items,
                 'pptk_1_id' => $pptk->id,
@@ -167,20 +308,15 @@ class KuitansiSeeder extends Seeder
                 'dpp' => $pajak['dpp'],
                 'jenis_dokumen' => 'PaymentProof',
             ];
-
-            // Isi kode objek pajak dan tarif untuk semua jenis_pph
-            if ($jenisPph) {
-                $payload['kode_objek_pajak'] = $jenisPph === '23' ? $taxCode23->kode : $taxCode22->kode;
-                $payload['tarif_pajak'] = $tarifPajak;
-            } else {
-                $payload['kode_objek_pajak'] = null;
-                $payload['tarif_pajak'] = null;
-            }
-
+            
             Kuitansi::create($payload);
         }
 
-        echo "KuitansiSeeder berhasil dijalankan dengan " . count($dataset) . " records!\n";
+        echo "✓ KuitansiSeeder berhasil! " . count($dataset) . " kuitansi telah dibuat.\n";
+        echo "  - TU: " . collect($dataset)->where('periode_type', 'TU')->count() . " records\n";
+        echo "  - GU: " . collect($dataset)->where('periode_type', 'GU')->count() . " records\n";
+        echo "  - Dengan PPH: " . collect($dataset)->whereNotNull('kode_pajak')->count() . " records\n";
+        echo "  - Tanpa PPH: " . collect($dataset)->whereNull('kode_pajak')->count() . " records\n";
     }
 }
 

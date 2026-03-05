@@ -1,34 +1,44 @@
 @extends('layouts.app')
 
+@section('title', 'Staff')
+
 @section('content')
-<div class="container-fluid">
-    <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Daftar Staff</h1>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#addStaffModal">
-            <i class="fas fa-plus fa-sm"></i> Tambah Staff
+<!-- Page Heading -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 text-gray-800 mb-0">
+            <i class="fas fa-users text-primary mr-2"></i>Staff
+        </h1>
+    </div>
+    <div class="col-md-6 text-right">
+        <button class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#addStaffModal">
+            <i class="fas fa-plus mr-2"></i>Tambah Staff
         </button>
     </div>
+</div>
 
-    <!-- DataTales Example -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Data Staff</h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>NIP</th>
-                            <th>Nama</th>
-                            <th>Jabatan</th>
-                            <th>Golongan</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
+<!-- DataTable Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); border: none;">
+        <h6 class="m-0 font-weight-bold text-white">
+            <i class="fas fa-table mr-2"></i>Data Staff
+        </h6>
+        <span class="badge badge-light">{{ count($staff) }} data</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
+                <thead style="background-color: #f8f9fc;">
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th><i class="fas fa-id-badge text-primary mr-1"></i>NIP</th>
+                        <th><i class="fas fa-user text-primary mr-1"></i>Nama</th>
+                        <th><i class="fas fa-briefcase text-primary mr-1"></i>Jabatan</th>
+                        <th><i class="fas fa-award text-primary mr-1"></i>Golongan</th>
+                        <th><i class="fas fa-info-circle text-primary mr-1"></i>Status</th>
+                        <th style="width: 100px;" class="text-center"><i class="fas fa-cogs text-primary mr-1"></i>Aksi</th>
+                    </tr>
+                </thead>
                     <tbody>
                         @foreach($staff as $index => $s)
                         <tr>
@@ -44,14 +54,14 @@
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
-                            <td>
-                                <button class="btn btn-sm btn-info" onclick="editStaff({{ $s }})">
+                            <td class="text-center">
+                                <button class="btn btn-info btn-sm mr-1" title="Edit" onclick="editStaff({{ $s }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <form action="{{ route('staff.destroy', $s->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus staff ini?')">
+                                <form action="{{ route('staff.destroy', $s->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -67,11 +77,13 @@
 
 <!-- Add Staff Modal -->
 <div class="modal fade" id="addStaffModal" tabindex="-1" role="dialog" aria-labelledby="addStaffModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addStaffModalLabel">Tambah Staff Baru</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); border: none;">
+                <h5 class="modal-title" id="addStaffModalLabel">
+                    <i class="fas fa-plus mr-2"></i>Tambah Staff Baru
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -121,7 +133,7 @@
                         @enderror
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan</button>
                 </div>
@@ -132,11 +144,13 @@
 
 <!-- Edit Staff Modal -->
 <div class="modal fade" id="editStaffModal" tabindex="-1" role="dialog" aria-labelledby="editStaffModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editStaffModalLabel">Edit Staff</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #36b9cc 0%, #258391 100%); border: none;">
+                <h5 class="modal-title" id="editStaffModalLabel">
+                    <i class="fas fa-edit mr-2"></i>Edit Staff
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -172,9 +186,9 @@
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="submit" class="btn btn-info">Update</button>
                 </div>
             </form>
         </div>
@@ -183,15 +197,47 @@
 
 @push('scripts')
 <script>
-function editStaff(staff) {
-    $('#editStaffForm').attr('action', '/staff/' + staff.id);
-    $('#edit_nip').val(staff.nip);
-    $('#edit_nama').val(staff.nama);
-    $('#edit_jabatan').val(staff.jabatan);
-    $('#edit_golongan').val(staff.golongan);
-    $('#edit_status').val(staff.status);
-    $('#editStaffModal').modal('show');
-}
+    function editStaff(staff) {
+        $('#editStaffForm').attr('action', '/staff/' + staff.id);
+        $('#edit_nip').val(staff.nip);
+        $('#edit_nama').val(staff.nama);
+        $('#edit_jabatan').val(staff.jabatan);
+        $('#edit_golongan').val(staff.golongan);
+        $('#edit_status').val(staff.status);
+        $('#editStaffModal').modal('show');
+    }
+
+    $(document).ready(function() {
+        if (!$.fn.DataTable.isDataTable('#dataTable')) {
+            $('#dataTable').DataTable({
+                destroy: true,
+                responsive: true,
+                autoWidth: false,
+                columnDefs: [
+                    { orderable: false, targets: [6] },
+                    { searchable: false, targets: [6] }
+                ],
+                language: {
+                    processing: "Memproses...",
+                    search: "Cari:",
+                    lengthMenu: "Tampilkan _MENU_ data",
+                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                    infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                    infoFiltered: "(difilter dari _MAX_ total data)",
+                    zeroRecords: "Tidak ada data yang cocok",
+                    emptyTable: "Tidak ada data Staff.",
+                    paginate: {
+                        first: "Pertama",
+                        last: "Terakhir",
+                        next: "Berikutnya",
+                        previous: "Sebelumnya"
+                    }
+                },
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Semua"]]
+            });
+        }
+    });
 </script>
 @endpush
 @endsection

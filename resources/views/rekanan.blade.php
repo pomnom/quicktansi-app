@@ -1,60 +1,71 @@
 @extends('layouts.app')
 
+@section('title', 'Rekanan')
+
 @section('content')
-<div class="container-fluid">
-    <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Daftar Rekanan</h1>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#addRekananModal">
-            <i class="fas fa-plus fa-sm"></i> Tambah Rekanan
+<!-- Page Heading -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 text-gray-800 mb-0">
+            <i class="fas fa-building text-primary mr-2"></i>Rekanan
+        </h1>
+    </div>
+    <div class="col-md-6 text-right">
+        <button class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#addRekananModal">
+            <i class="fas fa-plus mr-2"></i>Tambah Rekanan
         </button>
     </div>
+</div>
 
-    <!-- DataTales Example -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Data Rekanan</h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>NPWP</th>
-                            <th>Nama Perusahaan</th>
-                            <th>No. Rekening</th>
-                            <th>Bank</th>
-                            <th>Nama Pemilik Rekening</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($rekanans as $index => $rekanan)
-                        <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>{{ $rekanan->npwp }}</td>
-                            <td>{{ $rekanan->nama_perusahaan }}</td>
-                            <td>{{ $rekanan->nomor_rekening }}</td>
-                            <td>{{ $rekanan->bank }}</td>
-                            <td>{{ $rekanan->nama_pemilik_rekening }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-info" onclick="editRekanan({{ $rekanan }})">
+<!-- DataTable Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); border: none;">
+        <h6 class="m-0 font-weight-bold text-white">
+            <i class="fas fa-table mr-2"></i>Data Rekanan
+        </h6>
+        <span class="badge badge-light">{{ count($rekanans) }} data</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
+                <thead style="background-color: #f8f9fc;">
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th><i class="fas fa-id-card text-primary mr-1"></i>NPWP</th>
+                        <th><i class="fas fa-building text-primary mr-1"></i>Nama Perusahaan</th>
+                        <th><i class="fas fa-credit-card text-primary mr-1"></i>No. Rekening</th>
+                        <th><i class="fas fa-university text-primary mr-1"></i>Bank</th>
+                        <th><i class="fas fa-user text-primary mr-1"></i>Nama Pemilik Rekening</th>
+                        <th style="width: 100px;" class="text-center"><i class="fas fa-cogs text-primary mr-1"></i>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($rekanans as $index => $rekanan)
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td>{{ $rekanan->npwp }}</td>
+                        <td>{{ $rekanan->nama_perusahaan }}</td>
+                        <td>{{ $rekanan->nomor_rekening }}</td>
+                        <td>{{ $rekanan->bank }}</td>
+                        <td>{{ $rekanan->nama_pemilik_rekening }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-info btn-sm" title="Edit" onclick='editRekanan(@json($rekanan))'>
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <form action="{{ route('rekanan.destroy', $rekanan->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus rekanan ini?')">
+                                <form action="{{ route('rekanan.destroy', $rekanan->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -62,10 +73,12 @@
 <!-- Add Rekanan Modal -->
 <div class="modal fade" id="addRekananModal" tabindex="-1" role="dialog" aria-labelledby="addRekananModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addRekananModalLabel">Tambah Rekanan Baru</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <div class="modal-content border-left-primary">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addRekananModalLabel">
+                    <i class="fas fa-plus mr-2"></i>Tambah Rekanan Baru
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -108,7 +121,7 @@
                         @enderror
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan</button>
                 </div>
@@ -120,10 +133,12 @@
 <!-- Edit Rekanan Modal -->
 <div class="modal fade" id="editRekananModal" tabindex="-1" role="dialog" aria-labelledby="editRekananModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editRekananModalLabel">Edit Rekanan</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <div class="modal-content border-left-info">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="editRekananModalLabel">
+                    <i class="fas fa-edit mr-2"></i>Edit Rekanan
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -152,9 +167,9 @@
                         <input type="text" class="form-control" id="edit_nama_pemilik_rekening" name="nama_pemilik_rekening" required>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="submit" class="btn btn-info">Update</button>
                 </div>
             </form>
         </div>
@@ -177,12 +192,33 @@
     }
 
     $(document).ready(function() {
-        // Initialize DataTable only if not already initialized
         if (!$.fn.DataTable.isDataTable('#dataTable')) {
             $('#dataTable').DataTable({
+                destroy: true,
+                responsive: true,
+                autoWidth: false,
+                columnDefs: [
+                    { orderable: false, targets: [6] },
+                    { searchable: false, targets: [6] }
+                ],
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/id.json'
-                }
+                    processing: "Memproses...",
+                    search: "Cari:",
+                    lengthMenu: "Tampilkan _MENU_ data",
+                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                    infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                    infoFiltered: "(difilter dari _MAX_ total data)",
+                    zeroRecords: "Tidak ada data yang cocok",
+                    emptyTable: "Tidak ada data Rekanan.",
+                    paginate: {
+                        first: "Pertama",
+                        last: "Terakhir",
+                        next: "Berikutnya",
+                        previous: "Sebelumnya"
+                    }
+                },
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Semua"]]
             });
         }
     });

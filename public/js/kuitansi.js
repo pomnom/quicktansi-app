@@ -1,32 +1,48 @@
 // DataTables and SweetAlert2 are loaded via CDN in the view
 
 $(document).ready(function () {
-    // Destroy existing DataTable instance if exists
-    if ($.fn.DataTable.isDataTable("#dataTable")) {
-        $("#dataTable").DataTable().destroy();
-    }
+    const $table = $("#dataTable");
+    const isCustomDataTable =
+        $table.data("custom-dt") === 1 || $table.data("custom-dt") === "1";
 
-    // Initialize fresh DataTable with responsive
-    $("#dataTable").DataTable({
-        responsive: true,
-        columnDefs: [
-            { orderable: false, targets: [0, 8] }, // Disable sorting on checkbox and Aksi column
-            { responsivePriority: 1, targets: 0 }, // Checkbox always visible
-            { responsivePriority: 2, targets: 2 }, // No. Buku
-            { responsivePriority: 3, targets: -1 }, // Aksi column
-        ],
-        language: {
-            url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/id.json",
-            emptyTable: "Tidak ada data Kuitansi.",
-            zeroRecords: "Tidak ada data yang cocok",
-        },
-        pageLength: 10,
-        lengthMenu: [
-            [10, 25, 50, -1],
-            [10, 25, 50, "Semua"],
-        ],
-        autoWidth: false,
-    });
+    if (
+        $table.length &&
+        !isCustomDataTable &&
+        !$.fn.DataTable.isDataTable("#dataTable")
+    ) {
+        // Initialize default DataTable only for non-custom pages
+        $("#dataTable").DataTable({
+            responsive: true,
+            columnDefs: [
+                { orderable: false, targets: [0, 8] }, // Disable sorting on checkbox and Aksi column
+                { responsivePriority: 1, targets: 0 }, // Checkbox always visible
+                { responsivePriority: 2, targets: 2 }, // No. Buku
+                { responsivePriority: 3, targets: -1 }, // Aksi column
+            ],
+            language: {
+                processing: "Memproses...",
+                search: "Cari:",
+                lengthMenu: "Tampilkan _MENU_ data",
+                info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                infoFiltered: "(difilter dari _MAX_ total data)",
+                zeroRecords: "Tidak ada data yang cocok",
+                emptyTable: "Tidak ada data Kuitansi.",
+                paginate: {
+                    first: "Pertama",
+                    last: "Terakhir",
+                    next: "Berikutnya",
+                    previous: "Sebelumnya",
+                },
+            },
+            pageLength: 10,
+            lengthMenu: [
+                [10, 25, 50, -1],
+                [10, 25, 50, "Semua"],
+            ],
+            autoWidth: false,
+        });
+    }
 
     // SweetAlert for delete confirmation
     $(".btn-danger").on("click", function (e) {
