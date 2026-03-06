@@ -3,18 +3,35 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Instansi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
     /**
+     * UserController constructor.
+     * Hanya superadmin yang dapat mengakses manajemen user.
+     */
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (!auth()->user()->is_superadmin) {
+                abort(403, 'Unauthorized. Only superadmin can access user management.');
+            }
+            return $next($request);
+        });
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        // Superadmin dapat melihat semua user
         $users = User::all();
-        return view('user', compact('users'));
+        $instansis = Instansi::orderBy('nama')->get();
+        return view('user', compact('users', 'instansis'));
     }
 
     /**
@@ -23,19 +40,32 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'nip' => 'required|string|max:255|unique:users,nip',
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email|max:255',
-            'password' => 'required|string|min:6|max:255|confirmed',
+            'no_telp' => 'nullable|string|max:20',
+            'instansi' => 'nullable|string|max:255',
+            'is_superadmin' => 'nullable|boolean',
         ]);
 
+        // Only superadmin can create other superadmins
+        $isSuperadmin = false;
+        if (auth()->user()->is_superadmin && $request->has('is_superadmin')) {
+            $isSuperadmin = true;
+        }
+
         User::create([
+            'nip' => $request->nip,
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'no_telp' => $request->no_telp,
+            'instansi' => $request->instansi,
+            'is_superadmin' => $isSuperadmin,
+            'password' => Hash::make($request->nip), // Default password = NIP
             'email_verified_at' => now(),
         ]);
 
-        return redirect()->route('user.index')->with('success', 'User berhasil ditambahkan.');
+        return redirect()->route('user.index')->with('success', 'User berhasil ditambahkan dengan password default NIP.');
     }
 
     /**
@@ -53,25 +83,50 @@ class UserController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
+            'nip' => 'required|string|max:255|unique:users,nip,' . $id,
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $id,
-            'password' => 'nullable|string|min:6|max:255|confirmed',
+            'no_telp' => 'nullable|string|max:20',
+            'instansi' => 'nullable|string|max:255',
+            'is_superadmin' => 'nullable|boolean',
         ]);
 
         $user = User::findOrFail($id);
         
-        $data = [
+        // Only superadmin can modify is_superadmin flag
+        $isSuperadmin = $user->is_superadmin;
+        if (auth()->user()->is_superadmin && $request->has('is_superadmin')) {
+            $isSuperadmin = true;
+        } elseif (auth()->user()->is_superadmin && !$request->has('is_superadmin')) {
+            // Superadmin can uncheck the is_superadmin flag
+            $isSuperadmin = false;
+        }
+        
+        $user->update([
+            'nip' => $request->nip,
             'name' => $request->name,
             'email' => $request->email,
-        ];
-
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
-        }
-
-        $user->update($data);
+            'no_telp' => $request->no_telp,
+            'instansi' => $request->instansi,
+            'is_superadmin' => $isSuperadmin,
+        ]);
 
         return redirect()->route('user.index')->with('success', 'User berhasil diperbarui.');
+    }
+
+    /**
+     * Reset password user ke default (NIP).
+     */
+    public function resetPassword(string $id)
+    {
+        $user = User::findOrFail($id);
+        
+        // Reset password ke NIP
+        $user->update([
+            'password' => Hash::make($user->nip),
+        ]);
+
+        return redirect()->route('user.index')->with('success', 'Password user berhasil direset ke NIP: ' . $user->nip);
     }
 
     /**

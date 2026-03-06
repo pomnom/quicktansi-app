@@ -17,5 +17,6 @@ class Staff extends Model
         'jabatan',
         'golongan',
         'status',
+        'instansi',
     ];
 }

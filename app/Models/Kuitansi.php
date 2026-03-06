@@ -39,6 +39,7 @@ class Kuitansi extends Model
         'nip_bendahara_barang',
         'nama_pptk',
         'nip_pptk',
+        'instansi',
     ];
 
     protected $casts = [

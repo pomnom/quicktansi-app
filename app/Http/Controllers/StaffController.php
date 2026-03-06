@@ -12,7 +12,9 @@ class StaffController extends Controller
      */
     public function index()
     {
-        $staff = Staff::all();
+        // Filter staff berdasarkan instansi user yang sedang login
+        $userInstansi = auth()->user()->instansi;
+        $staff = Staff::where('instansi', $userInstansi)->get();
         return view('staff', compact('staff'));
     }
 
@@ -29,7 +31,11 @@ class StaffController extends Controller
             'status' => 'nullable|in:Pengguna Anggaran,PPK,PPTK,Bendahara Pengeluaran,Bendahara Barang',
         ]);
 
-        Staff::create($request->all());
+        // Auto-assign instansi dari user yang sedang login
+        $data = $request->all();
+        $data['instansi'] = auth()->user()->instansi;
+
+        Staff::create($data);
 
         return redirect()->route('staff.index')->with('success', 'Staff berhasil ditambahkan.');
     }
@@ -57,7 +63,12 @@ class StaffController extends Controller
         ]);
 
         $staff = Staff::findOrFail($id);
-        $staff->update($request->all());
+        
+        // Keep instansi unchanged (or assign if missing)
+        $data = $request->all();
+        $data['instansi'] = $staff->instansi ?? auth()->user()->instansi;
+        
+        $staff->update($data);
 
         return redirect()->route('staff.index')->with('success', 'Staff berhasil diperbarui.');
     }

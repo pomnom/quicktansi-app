@@ -14,6 +14,7 @@ class Rekanan extends Model
         'nama_perusahaan',
         'nomor_rekening',
         'bank',
-        'nama_pemilik_rekening'
+        'nama_pemilik_rekening',
+        'instansi'
     ];
 }

@@ -39,38 +39,37 @@
                         <th style="width: 100px;" class="text-center"><i class="fas fa-cogs text-primary mr-1"></i>Aksi</th>
                     </tr>
                 </thead>
-                    <tbody>
-                        @foreach($staff as $index => $s)
-                        <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>{{ $s->nip }}</td>
-                            <td>{{ $s->nama }}</td>
-                            <td>{{ $s->jabatan }}</td>
-                            <td>{{ $s->golongan }}</td>
-                            <td>
-                                @if($s->status)
-                                    <span class="badge badge-info">{{ $s->status }}</span>
-                                @else
-                                    <span class="text-muted">-</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-info btn-sm mr-1" title="Edit" onclick="editStaff({{ $s }})">
-                                    <i class="fas fa-edit"></i>
+                <tbody>
+                    @foreach($staff as $index => $s)
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td>{{ $s->nip }}</td>
+                        <td>{{ $s->nama }}</td>
+                        <td>{{ $s->jabatan }}</td>
+                        <td>{{ $s->golongan }}</td>
+                        <td>
+                            @if($s->status)
+                                <span class="badge badge-info">{{ $s->status }}</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-info btn-sm mr-1" title="Edit" onclick="editStaff({{ $s }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form action="{{ route('staff.destroy', $s->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm" title="Hapus">
+                                    <i class="fas fa-trash"></i>
                                 </button>
-                                <form action="{{ route('staff.destroy', $s->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" title="Hapus">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

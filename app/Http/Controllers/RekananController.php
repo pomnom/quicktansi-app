@@ -12,7 +12,9 @@ class RekananController extends Controller
      */
     public function index()
     {
-        $rekanans = Rekanan::latest()->get();
+        // Filter rekanan berdasarkan instansi user yang sedang login
+        $userInstansi = auth()->user()->instansi;
+        $rekanans = Rekanan::where('instansi', $userInstansi)->latest()->get();
         return view('rekanan', compact('rekanans'));
     }
 
@@ -28,6 +30,9 @@ class RekananController extends Controller
             'bank' => 'required|string|max:255',
             'nama_pemilik_rekening' => 'required|string|max:255',
         ]);
+
+        // Auto-assign instansi dari user yang sedang login
+        $validated['instansi'] = auth()->user()->instansi;
 
         Rekanan::create($validated);
 
@@ -46,6 +51,9 @@ class RekananController extends Controller
             'bank' => 'required|string|max:255',
             'nama_pemilik_rekening' => 'required|string|max:255',
         ]);
+
+        // Keep instansi unchanged (or assign if missing)
+        $validated['instansi'] = $rekanan->instansi ?? auth()->user()->instansi;
 
         $rekanan->update($validated);
 

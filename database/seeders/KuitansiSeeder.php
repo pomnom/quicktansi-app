@@ -20,8 +20,6 @@ class KuitansiSeeder extends Seeder
 
         $rekanans = Rekanan::all();
         $kodeRekenings = KodeRekening::all();
-        $pptks = Staff::where('status', 'PPTK')->get();
-        $allStaff = Staff::all();
         
         if ($rekanans->isEmpty()) {
             echo "Tidak ada rekanan. Jalankan RekananSeeder terlebih dahulu.\n";
@@ -33,11 +31,6 @@ class KuitansiSeeder extends Seeder
             return;
         }
 
-        if ($pptks->isEmpty()) {
-            echo "Tidak ada staff. Jalankan StaffSeeder terlebih dahulu.\n";
-            return;
-        }
-
         // Load kode objek pajak dari database
         $allTaxCodes = \DB::table('kode_objek_pajaks')->get()->keyBy('kode');
         
@@ -45,11 +38,6 @@ class KuitansiSeeder extends Seeder
             echo "Tidak ada kode objek pajak. Jalankan KodeObjekPajakSeeder terlebih dahulu.\n";
             return;
         }
-
-        // Snapshot fixed staff (boleh null jika belum ada)
-        $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
-        $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->first();
-        $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->first();
 
         // Helper to compute pajak dan total with new rule
         $computePajak = function(array $items, ?string $jenisPph, ?float $tarifPajak): array {
@@ -271,7 +259,19 @@ class KuitansiSeeder extends Seeder
             // Random selection
             $kodeRekening = $kodeRekenings->random();
             $rekanan = $rekanans->random();
-            $pptk = ($pptks->isNotEmpty() ? $pptks : $allStaff)->random();
+            
+            // Filter staff by rekanan's instansi
+            $rekananInstansi = $rekanan->instansi;
+            $pptk = Staff::where('status', 'PPTK')->where('instansi', $rekananInstansi)->inRandomOrder()->first();
+            $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $rekananInstansi)->first();
+            $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $rekananInstansi)->first();
+            $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->where('instansi', $rekananInstansi)->first();
+            
+            // Fallback to null if staff not found for this instansi
+            if (!$pptk) {
+                echo "Warning: No PPTK found for instansi '{$rekananInstansi}', skipping kuitansi.\n";
+                continue;
+            }
             
             // Generate no_buku
             $noBuku = $data['periode_type'] . '-' . $data['periode_number'] . '-' . str_pad($data['nomor_urut'], 3, '0', STR_PAD_LEFT);
@@ -307,6 +307,7 @@ class KuitansiSeeder extends Seeder
                 'nip_pptk' => $pptk->nip,
                 'dpp' => $pajak['dpp'],
                 'jenis_dokumen' => 'PaymentProof',
+                'instansi' => $rekanan->instansi, // Assign instansi dari rekanan
             ];
             
             Kuitansi::create($payload);

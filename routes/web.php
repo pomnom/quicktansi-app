@@ -2,10 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KuitansiController;
 use App\Http\Controllers\RekananController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\InstansiController;
+use App\Http\Controllers\MasterRekeningController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,12 +27,11 @@ Route::post('login', [AuthController::class, 'login'])->name('auth.login')->midd
 Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Dashboard & Main Routes (Protected by auth middleware)
-Route::get('/', function () {
-    return view('dashboard');
-})->name('dashboard')->middleware('auth');
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth');
 
 Route::middleware('auth')->group(function () {
     Route::resource('user', UserController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
+    Route::post('user/{id}/reset-password', [UserController::class, 'resetPassword'])->name('user.resetPassword');
 
     Route::resource('kuitansi', KuitansiController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
     Route::get('kuitansi/get-next-periode', [KuitansiController::class, 'getNextPeriodeNumber'])->name('kuitansi.getNextPeriode');
@@ -46,4 +48,20 @@ Route::middleware('auth')->group(function () {
     Route::resource('rekanan', RekananController::class)->only(['index', 'store', 'update', 'destroy']);
 
     Route::resource('staff', StaffController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
+    
+    Route::resource('instansi', InstansiController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
+
+    Route::get('master-rekening', [MasterRekeningController::class, 'index'])->name('master-rekening.index');
+
+    Route::post('master-rekening/kegiatan', [MasterRekeningController::class, 'storeKegiatan'])->name('master-rekening.kegiatan.store');
+    Route::put('master-rekening/kegiatan/{id}', [MasterRekeningController::class, 'updateKegiatan'])->name('master-rekening.kegiatan.update');
+    Route::delete('master-rekening/kegiatan/{id}', [MasterRekeningController::class, 'destroyKegiatan'])->name('master-rekening.kegiatan.destroy');
+
+    Route::post('master-rekening/sub-kegiatan', [MasterRekeningController::class, 'storeSubKegiatan'])->name('master-rekening.sub-kegiatan.store');
+    Route::put('master-rekening/sub-kegiatan/{id}', [MasterRekeningController::class, 'updateSubKegiatan'])->name('master-rekening.sub-kegiatan.update');
+    Route::delete('master-rekening/sub-kegiatan/{id}', [MasterRekeningController::class, 'destroySubKegiatan'])->name('master-rekening.sub-kegiatan.destroy');
+
+    Route::post('master-rekening/kode-rekening', [MasterRekeningController::class, 'storeKodeRekening'])->name('master-rekening.kode-rekening.store');
+    Route::put('master-rekening/kode-rekening/{id}', [MasterRekeningController::class, 'updateKodeRekening'])->name('master-rekening.kode-rekening.update');
+    Route::delete('master-rekening/kode-rekening/{id}', [MasterRekeningController::class, 'destroyKodeRekening'])->name('master-rekening.kode-rekening.destroy');
 });

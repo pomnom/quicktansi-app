@@ -777,7 +777,7 @@
             success: function(data) {
                 let options = '<option value="">-- Pilih Kegiatan --</option>';
                 data.forEach(item => {
-                    options += `<option value="${item.id_giat}" data-kode="${item.kode_giat}">${item.kode_giat} - ${item.nama_giat}</option>`;
+                    options += `<option value="${item.id}">${item.kode} - ${item.nama}</option>`;
                 });
                 $('#select_kegiatan').html(options);
             }
@@ -798,7 +798,7 @@
             success: function(data) {
                 let options = '<option value="">-- Pilih Sub Kegiatan --</option>';
                 data.forEach(item => {
-                    options += `<option value="${item.id_sub_giat}">${item.kode_sub_giat} - ${item.nama_sub_giat}</option>`;
+                    options += `<option value="${item.id}">${item.kode} - ${item.nama}</option>`;
                 });
                 $('#select_sub_kegiatan').html(options);
             }
@@ -817,7 +817,7 @@
             success: function(data) {
                 let options = '<option value="">-- Pilih Kode Rekening --</option>';
                 data.forEach(item => {
-                    options += `<option value="${item.id_akun}" data-kode="${item.kode_akun}" data-nama="${item.nama_akun}">${item.kode_akun} - ${item.nama_akun}</option>`;
+                    options += `<option value="${item.id}" data-kode="${item.kode}" data-nama="${item.nama}">${item.kode} - ${item.nama}</option>`;
                 });
                 $('#select_kode_rekening').prop('disabled', false).html(options);
             }

@@ -15,10 +15,13 @@ class KuitansiController extends Controller
 {
     public function index()
     {
-        $kuitansis = Kuitansi::with('rekanan')->get();
-        $rekanans = Rekanan::all();
-        $pptks = Staff::where('status', 'PPTK')->get();
-        $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->first();
+        // Filter data berdasarkan instansi user yang sedang login
+        $userInstansi = auth()->user()->instansi;
+        
+        $kuitansis = Kuitansi::with('rekanan')->where('instansi', $userInstansi)->get();
+        $rekanans = Rekanan::where('instansi', $userInstansi)->get();
+        $pptks = Staff::where('status', 'PPTK')->where('instansi', $userInstansi)->get();
+        $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->where('instansi', $userInstansi)->first();
         $kodeObjekPajaks = DB::table('kode_objek_pajaks')->orderBy('kode')->get();
         return view('kuitansi', compact('kuitansis', 'rekanans', 'pptks', 'bendaharaBarang', 'kodeObjekPajaks'));
     }
@@ -31,9 +34,13 @@ class KuitansiController extends Controller
             return response()->json(['error' => 'Invalid periode type'], 400);
         }
 
+        // Filter berdasarkan instansi user yang sedang login
+        $userInstansi = auth()->user()->instansi;
+
         // Get the highest periode_number for this periode_type
         // This is to show user what the last periode number was, not for auto-numbering kuitansi
         $lastKuitansi = Kuitansi::where('periode_type', $periodeType)
+            ->where('instansi', $userInstansi)
             ->orderBy('periode_number', 'desc')
             ->orderBy('nomor_urut', 'desc')
             ->first();
@@ -116,9 +123,10 @@ class KuitansiController extends Controller
         // Total Akhir = DPP + PPN - PPH
         $totalAkhir = $dpp + $ppnAmount - $pphAmount;
         
-        // Get staff for snapshot
-        $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
-        $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->first();
+        // Get staff for snapshot (filter by instansi)
+        $userInstansi = auth()->user()->instansi;
+        $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $userInstansi)->first();
+        $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $userInstansi)->first();
         $pptk = Staff::findOrFail($request->pptk_1_id);
         
         // Handle nama_bendahara_barang from form input (if provided)
@@ -160,6 +168,7 @@ class KuitansiController extends Controller
             'nip_bendahara_barang' => $nipBendaharaBarang,
             'nama_pptk' => $pptk->nama,
             'nip_pptk' => $pptk->nip,
+            'instansi' => $userInstansi, // Auto-assign instansi
         ]);
 
         return redirect()->route('kuitansi.index')->with('success', 'kuitansi berhasil ditambahkan.');
@@ -234,9 +243,10 @@ class KuitansiController extends Controller
         // Total Akhir = DPP + PPN - PPH
         $totalAkhir = $dpp + $ppnAmount - $pphAmount;
         
-        // Get staff for snapshot
-        $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
-        $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->first();
+        // Get staff for snapshot (filter by instansi)
+        $userInstansi = auth()->user()->instansi;
+        $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $userInstansi)->first();
+        $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $userInstansi)->first();
         $pptk = Staff::findOrFail($request->pptk_1_id);
         
         // Handle nama_bendahara_barang from form input (if provided)
@@ -279,6 +289,7 @@ class KuitansiController extends Controller
             'nip_bendahara_barang' => $nipBendaharaBarang,
             'nama_pptk' => $pptk->nama,
             'nip_pptk' => $pptk->nip,
+            'instansi' => $kuitansi->instansi ?? $userInstansi, // Keep instansi unchanged
         ]);
 
         return redirect()->route('kuitansi.index')->with('success', 'kuitansi berhasil diperbarui.');
@@ -306,9 +317,9 @@ class KuitansiController extends Controller
     // API endpoints for cascading selects
     public function getKegiatan()
     {
-        $kegiatan = Kegiatan::select('id_giat', 'kode_giat', 'nama_giat')
-            ->groupBy('id_giat', 'kode_giat', 'nama_giat')
-            ->orderBy('kode_giat')
+        $kegiatan = Kegiatan::selectRaw('id_giat as id, id_giat, kode_giat as kode, kode_giat, nama_giat as nama, nama_giat')
+            ->distinct()
+            ->orderBy('kode')
             ->get();
         
         return response()->json($kegiatan);
@@ -316,12 +327,12 @@ class KuitansiController extends Controller
 
     public function getSubKegiatan(Request $request)
     {
-        $idGiat = $request->query('id_giat');
+        $idGiat = $request->query('id_giat') ?? $request->query('id');
         
-        $subKegiatan = SubKegiatan::select('id_sub_giat', 'kode_sub_giat', 'nama_sub_giat')
+        $subKegiatan = SubKegiatan::selectRaw('id_sub_giat as id, id_sub_giat, id_giat, kode_sub_giat as kode, kode_sub_giat, nama_sub_giat as nama, nama_sub_giat')
             ->where('id_giat', $idGiat)
-            ->groupBy('id_sub_giat', 'kode_sub_giat', 'nama_sub_giat')
-            ->orderBy('kode_sub_giat')
+            ->distinct()
+            ->orderBy('kode')
             ->get();
         
         return response()->json($subKegiatan);
@@ -329,11 +340,11 @@ class KuitansiController extends Controller
 
     public function getKodeRekening(Request $request)
     {
-        $idSubGiat = $request->query('id_sub_giat');
+        $idSubGiat = $request->query('id_sub_giat') ?? $request->query('id');
         
-        $kodeRekening = KodeRekening::select('id_akun', 'kode_akun', 'nama_akun', 'nilai_anggaran')
+        $kodeRekening = KodeRekening::selectRaw('id_akun as id, id_akun, id_sub_giat, kode_akun as kode, kode_akun, nama_akun as nama, nama_akun')
             ->where('id_sub_giat', $idSubGiat)
-            ->orderBy('kode_akun')
+            ->orderBy('kode')
             ->get();
         
         return response()->json($kodeRekening);

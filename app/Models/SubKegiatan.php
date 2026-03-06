@@ -12,10 +12,8 @@ class SubKegiatan extends Model
     protected $table = 'sub_kegiatan';
 
     protected $fillable = [
-        'id_daerah', 'tahun', 'id_unit', 'id_skpd', 'id_sub_skpd',
-        'kode_sub_skpd', 'nama_sub_skpd', 'id_urusan', 'id_bidang_urusan',
-        'id_fungsi', 'id_sub_fungsi', 'id_program', 'id_giat', 'id_sub_giat',
-        'kode_sub_giat', 'nama_sub_giat', 'nilai_anggaran'
+        'instansi', 'id_giat', 'id_sub_giat',
+        'kode_sub_giat', 'nama_sub_giat'
     ];
 
     public function kegiatan()

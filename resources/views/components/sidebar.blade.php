@@ -56,6 +56,20 @@
             <span>Staff</span></a>
     </li>
 
+    <!-- Nav Item - Instansi -->
+    <li class="nav-item {{ request()->routeIs('instansi.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('instansi.index') }}">
+            <i class="fas fa-fw fa-building"></i>
+            <span>Instansi</span></a>
+    </li>
+
+    <li class="nav-item {{ request()->routeIs('master-rekening.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('master-rekening.index') }}">
+            <i class="fas fa-fw fa-sitemap"></i>
+            <span>Master Rekening</span></a>
+    </li>
+
+    @if(auth()->user()->is_superadmin)
     <!-- Divider -->
     <hr class="sidebar-divider">
 
@@ -70,6 +84,7 @@
             <i class="fas fa-fw fa-users-cog"></i>
             <span>Manajemen User</span></a>
     </li>
+    @endif
 
     <!-- Divider -->
     <hr class="sidebar-divider d-none d-md-block">

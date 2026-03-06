@@ -138,17 +138,18 @@
                     @csrf
 
                     <div class="form-group mb-3">
-                        <label for="email" class="form-label">Email</label>
+                        <label for="nip" class="form-label">NIP</label>
                         <input 
-                            type="email" 
-                            class="form-control @error('email') is-invalid @enderror" 
-                            id="email" 
-                            name="email" 
-                            placeholder="Masukkan email anda"
-                            value="{{ old('email') }}"
+                            type="text" 
+                            class="form-control @error('nip') is-invalid @enderror" 
+                            id="nip" 
+                            name="nip" 
+                            placeholder="Masukkan NIP anda"
+                            value="{{ old('nip') }}"
                             required
+                            maxlength="18"
                         >
-                        @error('email')
+                        @error('nip')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
                     </div>
@@ -187,7 +188,7 @@
                 </form>
 
                 <div style="text-align: center; margin-top: 20px; color: #666; font-size: 13px;">
-                    <p>Demo: admin@example.com / password</p>
+                    <p><small>Username & Password default adalah <strong>NIP</strong> anda</small></p>
                 </div>
             </div>
         </div>

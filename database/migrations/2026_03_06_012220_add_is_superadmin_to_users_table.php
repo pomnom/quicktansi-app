@@ -11,14 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kegiatan', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_giat')->unique();
-            $table->string('kode_giat', 50);
-            $table->string('nama_giat');
-            $table->timestamps();
-
-            $table->index('kode_giat');
+        Schema::table('users', function (Blueprint $table) {
+            $table->boolean('is_superadmin')->default(false)->after('instansi');
         });
     }
 
@@ -27,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('kegiatan');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('is_superadmin');
+        });
     }
 };

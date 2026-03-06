@@ -18,6 +18,7 @@ class StaffSeeder extends Seeder
         \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $staff = [
+            // Staff BPKAD
             // Pengguna Anggaran
             [
                 'nip' => '197305082006041009',
@@ -25,6 +26,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Kepala Badan Pengelolaan Keuangan dan Aset Daerah',
                 'golongan' => 'IV/d',
                 'status' => 'Pengguna Anggaran',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
 
             // PPK (Pejabat Pembuat Komitmen)
@@ -34,6 +36,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Kepala Bidang Anggaran dan Perbendaharaan',
                 'golongan' => 'IV/b',
                 'status' => 'PPK',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
 
             // PPTK (Pejabat Pelaksana Teknis Kegiatan)
@@ -43,6 +46,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Kepala Sub Bidang Perencanaan Anggaran',
                 'golongan' => 'III/d',
                 'status' => 'PPTK',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
             [
                 'nip' => '198207032010011008',
@@ -50,6 +54,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Kepala Sub Bidang Sistem Informasi Keuangan',
                 'golongan' => 'III/c',
                 'status' => 'PPTK',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
             [
                 'nip' => '197802252005052003',
@@ -57,6 +62,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Kepala Sub Bidang Akuntansi dan Pelaporan',
                 'golongan' => 'III/d',
                 'status' => 'PPTK',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
             [
                 'nip' => '198511202011031002',
@@ -64,6 +70,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Kepala Sub Bidang Pendapatan Daerah',
                 'golongan' => 'III/b',
                 'status' => 'PPTK',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
             [
                 'nip' => '199003082015042001',
@@ -71,6 +78,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Kepala Sub Bidang Aset Daerah',
                 'golongan' => 'III/a',
                 'status' => 'PPTK',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
 
             // Bendahara Pengeluaran
@@ -80,6 +88,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Bendahara Pengeluaran BPKAD',
                 'golongan' => 'III/c',
                 'status' => 'Bendahara Pengeluaran',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
 
             // Bendahara Barang (Pengurus Barang)
@@ -89,15 +98,17 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Pengurus Barang BPKAD',
                 'golongan' => 'III/b',
                 'status' => 'Bendahara Barang',
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
 
-            // Staf Pendukung (Tanpa Status Khusus)
+            // Staf Pendukung
             [
                 'nip' => '199201152016011003',
                 'nama' => 'Andi Nugroho, S.H., M.H.',
                 'jabatan' => 'Analis Hukum',
                 'golongan' => 'III/a',
                 'status' => null,
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
             [
                 'nip' => '198807202013022007',
@@ -105,6 +116,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Analis Kepegawaian',
                 'golongan' => 'III/b',
                 'status' => null,
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
             [
                 'nip' => '199505282018051001',
@@ -112,6 +124,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Analis Sistem Informasi',
                 'golongan' => 'III/a',
                 'status' => null,
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
             [
                 'nip' => '199309102017042002',
@@ -119,6 +132,7 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Analis Keuangan',
                 'golongan' => 'III/a',
                 'status' => null,
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             ],
             [
                 'nip' => '198904162015061009',
@@ -126,6 +140,49 @@ class StaffSeeder extends Seeder
                 'jabatan' => 'Analis Perencanaan',
                 'golongan' => 'III/a',
                 'status' => null,
+                'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
+            ],
+
+            // Staff Dinas Kesehatan
+            [
+                'nip' => '197108152000031007',
+                'nama' => 'dr. H. Sutrisno, M.Kes., Sp.PD.',
+                'jabatan' => 'Kepala Dinas Kesehatan',
+                'golongan' => 'IV/c',
+                'status' => 'Pengguna Anggaran',
+                'instansi' => 'Dinas Kesehatan',
+            ],
+            [
+                'nip' => '197612102005022003',
+                'nama' => 'Dra. Hj. Mulyati, M.M.',
+                'jabatan' => 'Sekretaris Dinas Kesehatan',
+                'golongan' => 'IV/a',
+                'status' => 'PPK',
+                'instansi' => 'Dinas Kesehatan',
+            ],
+            [
+                'nip' => '198003152009031010',
+                'nama' => 'Dr. Adi Kurniawan, S.KM., M.Kes.',
+                'jabatan' => 'Kepala Bidang Pelayanan Kesehatan',
+                'golongan' => 'III/d',
+                'status' => 'PPTK',
+                'instansi' => 'Dinas Kesehatan',
+            ],
+            [
+                'nip' => '198305222009122004',
+                'nama' => 'Siti Mardiana, S.E., M.Ak.',
+                'jabatan' => 'Bendahara Pengeluaran Dinkes',
+                'golongan' => 'III/c',
+                'status' => 'Bendahara Pengeluaran',
+                'instansi' => 'Dinas Kesehatan',
+            ],
+            [
+                'nip' => '198709142012032008',
+                'nama' => 'Ani Sulistyowati, S.E.',
+                'jabatan' => 'Pengurus Barang Dinkes',
+                'golongan' => 'III/a',
+                'status' => 'Bendahara Barang',
+                'instansi' => 'Dinas Kesehatan',
             ],
         ];
 

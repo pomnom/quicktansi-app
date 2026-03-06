@@ -16,19 +16,37 @@ class UserSeeder extends Seeder
         // Hapus user yang sudah ada
         User::truncate();
 
-        // Buat user admin default
+        // Buat user admin default (Superadmin)
         User::create([
-            'name' => 'Admin',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('password'),
+            'nip' => '199001012020011001',
+            'name' => 'Admin Sistem',
+            'email' => 'admin@quicktansi.com',
+            'no_telp' => '081234567890',
+            'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
+            'is_superadmin' => true, // Superadmin dapat melihat semua user
+            'password' => Hash::make('199001012020011001'), // Password default = NIP
             'email_verified_at' => now(),
         ]);
 
-        // Buat beberapa user tambahan untuk testing
+        // Buat user operator untuk testing
         User::create([
-            'name' => 'Operator',
-            'email' => 'operator@example.com',
-            'password' => Hash::make('password'),
+            'nip' => '199505152021012001',
+            'name' => 'Operator Keuangan',
+            'email' => 'operator@quicktansi.com',
+            'no_telp' => '081234567891',
+            'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
+            'password' => Hash::make('199505152021012001'), // Password default = NIP
+            'email_verified_at' => now(),
+        ]);
+
+        // Buat user bendahara untuk testing
+        User::create([
+            'nip' => '198803102019031002',
+            'name' => 'Bendahara Pengeluaran',
+            'email' => 'bendahara@quicktansi.com',
+            'no_telp' => '081234567892',
+            'instansi' => 'Dinas Kesehatan',
+            'password' => Hash::make('198803102019031002'), // Password default = NIP
             'email_verified_at' => now(),
         ]);
     }
