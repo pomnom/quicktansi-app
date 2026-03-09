@@ -1,5 +1,7 @@
 // Handle kode_objek_pajak input - format display with full info
-$("#kode_objek_pajak, #edit_kode_objek_pajak").on("input", function () {
+$(
+    "#kode_objek_pajak_22, #edit_kode_objek_pajak_22, #kode_objek_pajak_23, #edit_kode_objek_pajak_23",
+).on("input", function () {
     const input = $(this);
     const value = input.val().trim();
     const datalistId = input.attr("list");
@@ -20,16 +22,26 @@ $("#kode_objek_pajak, #edit_kode_objek_pajak").on("input", function () {
     }
 });
 
-// Handle kode_objek_pajak change - fetch tarif
-$("#kode_objek_pajak, #edit_kode_objek_pajak").on("change", function () {
+// Handle kode_objek_pajak change - fetch tarif for PPH 22 or PPH 23
+$(
+    "#kode_objek_pajak_22, #edit_kode_objek_pajak_22, #kode_objek_pajak_23, #edit_kode_objek_pajak_23",
+).on("change", function () {
     const input = $(this);
+    const inputId = input.attr("id");
     const fullValue = input.val().trim();
 
     // Extract just the code (everything before " -")
     const kode = fullValue.split(" -")[0].trim();
 
-    const iEdit = input.attr("id").startsWith("edit_");
-    const tarifField = iEdit ? "#edit_tarif_pajak" : "#tarif_pajak";
+    const isEdit = inputId.startsWith("edit_");
+    const isPph23 = inputId.endsWith("_23");
+    const tarifField = isPph23
+        ? isEdit
+            ? "#edit_tarif_pajak_23"
+            : "#tarif_pajak_23"
+        : isEdit
+          ? "#edit_tarif_pajak"
+          : "#tarif_pajak";
 
     if (kode) {
         fetch(`/api/tarif-pajak/${kode}`)
@@ -39,38 +51,18 @@ $("#kode_objek_pajak, #edit_kode_objek_pajak").on("change", function () {
             })
             .then((data) => {
                 $(tarifField).val(data.tarif);
-                // Trigger PPH recalculation
-                if (iEdit) {
-                    calculateEditPPH();
-                } else {
-                    calculatePPH();
-                }
+                isEdit ? calculateEditTotalAkhir() : calculateTotalAkhir();
             })
             .catch((error) => {
                 console.error("Error:", error);
                 $(tarifField).val("");
                 alert("Kode pajak tidak ditemukan");
-                // Reset input to just the attempted code
                 input.val(kode);
-                // Reset PPH display
-                if (iEdit) {
-                    document.getElementById("edit_pph_nominal").value = "0";
-                    calculateEditTotalAkhir();
-                } else {
-                    document.getElementById("pph_nominal").value = "0";
-                    calculateTotalAkhir();
-                }
+                isEdit ? calculateEditTotalAkhir() : calculateTotalAkhir();
             });
     } else {
         $(tarifField).val("");
-        // Reset PPH display
-        if (iEdit) {
-            document.getElementById("edit_pph_nominal").value = "0";
-            calculateEditTotalAkhir();
-        } else {
-            document.getElementById("pph_nominal").value = "0";
-            calculateTotalAkhir();
-        }
+        isEdit ? calculateEditTotalAkhir() : calculateTotalAkhir();
     }
 });
 
@@ -82,14 +74,13 @@ $(document).on("change", ".item-qty, .item-price", function () {
     calculateEditTotalAkhir();
 });
 
-// Also recalculate when jenis_pph changes (for PPH 22 threshold)
-$("#jenis_pph, #edit_jenis_pph").on("change", function () {
-    const iEdit = $(this).attr("id").startsWith("edit_");
-    if (iEdit) {
-        calculateEditPPH();
+// Recalculate PPH 23 when jasa checkbox changes
+$(document).on("change", ".item-jasa", function () {
+    const isEditTable =
+        $(this).closest("table").attr("id") === "editItemsTable";
+    if (isEditTable) {
         calculateEditTotalAkhir();
     } else {
-        calculatePPH();
         calculateTotalAkhir();
     }
 });
@@ -121,6 +112,54 @@ function calculateEditDPP() {
     // Calculate DPP from items
     let dpp = 0;
     document.querySelectorAll("#editItemsBody tr").forEach(function (row) {
+        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const price = parseFloat(row.querySelector(".item-price").value) || 0;
+        dpp += qty * price;
+    });
+    return parseInt(dpp);
+}
+
+function calculateJasaDPP() {
+    let dpp = 0;
+    document.querySelectorAll("#itemsBody tr").forEach(function (row) {
+        const isJasa = row.querySelector(".item-jasa")?.checked || false;
+        if (!isJasa) return;
+        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const price = parseFloat(row.querySelector(".item-price").value) || 0;
+        dpp += qty * price;
+    });
+    return parseInt(dpp);
+}
+
+function calculateEditJasaDPP() {
+    let dpp = 0;
+    document.querySelectorAll("#editItemsBody tr").forEach(function (row) {
+        const isJasa = row.querySelector(".item-jasa")?.checked || false;
+        if (!isJasa) return;
+        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const price = parseFloat(row.querySelector(".item-price").value) || 0;
+        dpp += qty * price;
+    });
+    return parseInt(dpp);
+}
+
+function calculateBarangDPP() {
+    let dpp = 0;
+    document.querySelectorAll("#itemsBody tr").forEach(function (row) {
+        const isJasa = row.querySelector(".item-jasa")?.checked || false;
+        if (isJasa) return;
+        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const price = parseFloat(row.querySelector(".item-price").value) || 0;
+        dpp += qty * price;
+    });
+    return parseInt(dpp);
+}
+
+function calculateEditBarangDPP() {
+    let dpp = 0;
+    document.querySelectorAll("#editItemsBody tr").forEach(function (row) {
+        const isJasa = row.querySelector(".item-jasa")?.checked || false;
+        if (isJasa) return;
         const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
         const price = parseFloat(row.querySelector(".item-price").value) || 0;
         dpp += qty * price;
@@ -162,55 +201,119 @@ function calculateEditPPN() {
     return ppnNominal;
 }
 
-function calculatePPH() {
-    const dpp = calculateDPP();
+function calculatePPH22() {
+    const barangDPP = calculateBarangDPP();
     const tarif = parseFloat(document.getElementById("tarif_pajak").value) || 0;
-    const jenisPph = document.getElementById("jenis_pph").value || "";
-
-    // Calculate PPH with PPH 22 threshold logic
-    let pphNominal = 0;
-    if (tarif > 0) {
-        // PPH 22: hanya jika belanja > 2.000.000
-        // PPH 23: berlaku untuk semua belanja
-        if (jenisPph === "22" && dpp <= 2000000) {
-            pphNominal = 0; // Tidak kena pajak
+    let pph = 0;
+    if (tarif > 0 && barangDPP > 2000000) {
+        pph = Math.round((barangDPP * tarif) / 100);
+    }
+    const field = document.getElementById("pph_22_nominal");
+    if (field) field.value = "Rp " + pph.toLocaleString("id-ID");
+    const info = document.getElementById("pph_22_info");
+    if (info) {
+        if (tarif > 0) {
+            info.textContent =
+                barangDPP <= 2000000
+                    ? "DPP Barang Rp " +
+                      barangDPP.toLocaleString("id-ID") +
+                      " ≤ 2jt → tidak dipotong"
+                    : "DPP Barang Rp " + barangDPP.toLocaleString("id-ID");
+            info.style.display = "";
         } else {
-            pphNominal = Math.round((dpp * tarif) / 100);
+            info.style.display = "none";
         }
     }
+    return pph;
+}
 
-    const pphField = document.getElementById("pph_nominal");
-    if (pphField) {
-        pphField.value = pphNominal.toLocaleString("id-ID");
+function calculatePPH23() {
+    const jasaDPP = calculateJasaDPP();
+    const tarif =
+        parseFloat(document.getElementById("tarif_pajak_23").value) || 0;
+    let pph = 0;
+    if (tarif > 0 && jasaDPP > 0) {
+        pph = Math.round((jasaDPP * tarif) / 100);
     }
+    const field = document.getElementById("pph_23_nominal");
+    if (field) field.value = "Rp " + pph.toLocaleString("id-ID");
+    const info = document.getElementById("pph_23_info");
+    if (info) {
+        if (tarif > 0) {
+            info.textContent = "DPP Jasa Rp " + jasaDPP.toLocaleString("id-ID");
+            info.style.display = "";
+        } else {
+            info.style.display = "none";
+        }
+    }
+    return pph;
+}
 
-    return pphNominal;
+function calculatePPH() {
+    const pph22 = calculatePPH22();
+    const pph23 = calculatePPH23();
+    const total = pph22 + pph23;
+    const field = document.getElementById("pph_nominal");
+    if (field) field.value = "Rp " + total.toLocaleString("id-ID");
+    return total;
+}
+
+function calculateEditPPH22() {
+    const barangDPP = calculateEditBarangDPP();
+    const tarif =
+        parseFloat(document.getElementById("edit_tarif_pajak").value) || 0;
+    let pph = 0;
+    if (tarif > 0 && barangDPP > 2000000) {
+        pph = Math.round((barangDPP * tarif) / 100);
+    }
+    const field = document.getElementById("edit_pph_22_nominal");
+    if (field) field.value = "Rp " + pph.toLocaleString("id-ID");
+    const info = document.getElementById("edit_pph_22_info");
+    if (info) {
+        if (tarif > 0) {
+            info.textContent =
+                barangDPP <= 2000000
+                    ? "DPP Barang Rp " +
+                      barangDPP.toLocaleString("id-ID") +
+                      " ≤ 2jt → tidak dipotong"
+                    : "DPP Barang Rp " + barangDPP.toLocaleString("id-ID");
+            info.style.display = "";
+        } else {
+            info.style.display = "none";
+        }
+    }
+    return pph;
+}
+
+function calculateEditPPH23() {
+    const jasaDPP = calculateEditJasaDPP();
+    const tarif =
+        parseFloat(document.getElementById("edit_tarif_pajak_23").value) || 0;
+    let pph = 0;
+    if (tarif > 0 && jasaDPP > 0) {
+        pph = Math.round((jasaDPP * tarif) / 100);
+    }
+    const field = document.getElementById("edit_pph_23_nominal");
+    if (field) field.value = "Rp " + pph.toLocaleString("id-ID");
+    const info = document.getElementById("edit_pph_23_info");
+    if (info) {
+        if (tarif > 0) {
+            info.textContent = "DPP Jasa Rp " + jasaDPP.toLocaleString("id-ID");
+            info.style.display = "";
+        } else {
+            info.style.display = "none";
+        }
+    }
+    return pph;
 }
 
 function calculateEditPPH() {
-    const dpp = calculateEditDPP();
-    const tarif =
-        parseFloat(document.getElementById("edit_tarif_pajak").value) || 0;
-    const jenisPph = document.getElementById("edit_jenis_pph").value || "";
-
-    // Calculate PPH with PPH 22 threshold logic
-    let pphNominal = 0;
-    if (tarif > 0) {
-        // PPH 22: hanya jika belanja > 2.000.000
-        // PPH 23: berlaku untuk semua belanja
-        if (jenisPph === "22" && dpp <= 2000000) {
-            pphNominal = 0; // Tidak kena pajak
-        } else {
-            pphNominal = Math.round((dpp * tarif) / 100);
-        }
-    }
-
-    const pphField = document.getElementById("edit_pph_nominal");
-    if (pphField) {
-        pphField.value = pphNominal.toLocaleString("id-ID");
-    }
-
-    return pphNominal;
+    const pph22 = calculateEditPPH22();
+    const pph23 = calculateEditPPH23();
+    const total = pph22 + pph23;
+    const field = document.getElementById("edit_pph_nominal");
+    if (field) field.value = "Rp " + total.toLocaleString("id-ID");
+    return total;
 }
 
 function calculateTotalAkhir() {

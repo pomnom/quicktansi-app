@@ -301,16 +301,6 @@
                                 <input type="text" class="form-control" id="nomor_urut" name="nomor_urut" placeholder="001" maxlength="3" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="jenis_pph" class="font-weight-bold">Jenis PPH</label>
-                                <select class="form-control" id="jenis_pph" name="jenis_pph">
-                                    <option value="">-- Pilih Jenis PPH --</option>
-                                    <option value="22">PPH 22</option>
-                                    <option value="23">PPH 23</option>
-                                </select>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="form-group">
@@ -343,6 +333,7 @@
                             <div class="form-group">
                                 <label for="pph_nominal" class="font-weight-bold">PPH yang Dipotong</label>
                                 <input type="text" class="form-control" id="pph_nominal" value="Rp 0" readonly>
+                                <small id="jasa_dpp_info" class="text-muted" style="display:none;"></small>
                             </div>
                         </div>
                     </div>
@@ -394,6 +385,7 @@
                                     <th>Nama Item</th>
                                     <th>Jumlah</th>
                                     <th>Harga Satuan</th>
+                                    <th class="jasa-col" style="width:70px;">Jasa?</th>
                                     <th width="50px">Aksi</th>
                                 </tr>
                             </thead>
@@ -462,16 +454,6 @@
                                 <input type="text" class="form-control" id="edit_nomor_urut" name="nomor_urut" placeholder="001" maxlength="3" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_jenis_pph" class="font-weight-bold">Jenis PPH</label>
-                                <select class="form-control" id="edit_jenis_pph" name="jenis_pph">
-                                    <option value="">-- Pilih Jenis PPH --</option>
-                                    <option value="22">PPH 22</option>
-                                    <option value="23">PPH 23</option>
-                                </select>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="form-group">
@@ -486,12 +468,45 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="edit_kode_objek_pajak" class="font-weight-bold">Kode Objek Pajak</label>
-                        <input type="text" class="form-control" id="edit_kode_objek_pajak" name="kode_objek_pajak" list="kodeObjekPajakList" placeholder="Cari kode objek pajak..." autocomplete="off">
-                        <small class="form-text text-muted">Hanya perlu diisi jika belanja ≥ 2.000.000</small>
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <p class="font-weight-bold mb-2"><i class="fas fa-receipt mr-1 text-secondary"></i>Pemotongan Pajak (PPH)</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-2" style="border-left: 4px solid #f6c23e;">
+                                    <div class="card-body py-2 px-3">
+                                        <p class="font-weight-bold text-warning mb-1 small"><i class="fas fa-boxes mr-1"></i>PPH 22 — Belanja Barang</p>
+                                        <div class="form-group mb-1">
+                                            <input type="text" class="form-control form-control-sm" id="edit_kode_objek_pajak_22" name="kode_objek_pajak" list="kodeObjekPajakList" placeholder="Kode objek pajak PPH 22..." autocomplete="off">
+                                            <small class="text-muted">Berlaku jika total barang &gt; Rp 2.000.000</small>
+                                        </div>
+                                        <input type="hidden" id="edit_tarif_pajak" name="tarif_pajak" value="0">
+                                        <div class="form-group mb-0">
+                                            <label class="small mb-0 font-weight-bold">PPH 22 Dipotong:</label>
+                                            <input type="text" class="form-control form-control-sm" id="edit_pph_22_nominal" value="Rp 0" readonly>
+                                            <small id="edit_pph_22_info" class="text-muted" style="display:none;"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card mb-2" style="border-left: 4px solid #36b9cc;">
+                                    <div class="card-body py-2 px-3">
+                                        <p class="font-weight-bold text-info mb-1 small"><i class="fas fa-tools mr-1"></i>PPH 23 — Belanja Jasa</p>
+                                        <div class="form-group mb-1">
+                                            <input type="text" class="form-control form-control-sm" id="edit_kode_objek_pajak_23" name="kode_objek_pajak_23" list="kodeObjekPajakList" placeholder="Kode objek pajak PPH 23..." autocomplete="off">
+                                            <small class="text-muted">Berlaku pada item bertanda Jasa &#10003;</small>
+                                        </div>
+                                        <input type="hidden" id="edit_tarif_pajak_23" name="tarif_pajak_23" value="0">
+                                        <div class="form-group mb-0">
+                                            <label class="small mb-0 font-weight-bold">PPH 23 Dipotong:</label>
+                                            <input type="text" class="form-control form-control-sm" id="edit_pph_23_nominal" value="Rp 0" readonly>
+                                            <small id="edit_pph_23_info" class="text-muted" style="display:none;"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <input type="hidden" id="edit_tarif_pajak" name="tarif_pajak" value="0">
 
                     <div class="row">
                         <div class="col-md-6">
@@ -502,7 +517,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_pph_nominal" class="font-weight-bold">PPH yang Dipotong</label>
+                                <label for="edit_pph_nominal" class="font-weight-bold">Total PPH Dipotong</label>
                                 <input type="text" class="form-control" id="edit_pph_nominal" value="Rp 0" readonly>
                             </div>
                         </div>
@@ -555,6 +570,7 @@
                                     <th>Nama Item</th>
                                     <th>Jumlah</th>
                                     <th>Harga Satuan</th>
+                                    <th class="jasa-col" style="width:70px;">Jasa?</th>
                                     <th width="50px">Aksi</th>
                                 </tr>
                             </thead>
@@ -864,20 +880,26 @@
             <td><input type="text" class="form-control form-control-sm item-name" placeholder="Nama item"></td>
             <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah" min="1" step="1"></td>
             <td><input type="number" class="form-control form-control-sm item-price" placeholder="Harga satuan" min="0" step="0.01"></td>
+            <td class="jasa-col text-center"><input type="checkbox" class="item-jasa"></td>
             <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow('${rowId}')"><i class="fas fa-trash"></i></button></td>
         `;
         tbody.appendChild(row);
     }
 
     function addEditItemRow() {
+        addEditItemRowWithData('', '', '', false);
+    }
+
+    function addEditItemRowWithData(nama, jumlah, harga, isJasa) {
         const tbody = document.getElementById('editItemsBody');
         const rowId = 'edit_item_' + editItemCounter++;
         const row = document.createElement('tr');
         row.id = rowId;
         row.innerHTML = `
-            <td><input type="text" class="form-control form-control-sm item-name" placeholder="Nama item"></td>
-            <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah" min="1" step="1"></td>
-            <td><input type="number" class="form-control form-control-sm item-price" placeholder="Harga satuan" min="0" step="0.01"></td>
+            <td><input type="text" class="form-control form-control-sm item-name" placeholder="Nama item" value="${nama}"></td>
+            <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah" min="1" step="1" value="${jumlah}"></td>
+            <td><input type="number" class="form-control form-control-sm item-price" placeholder="Harga satuan" min="0" step="0.01" value="${harga}"></td>
+            <td class="jasa-col text-center"><input type="checkbox" class="item-jasa" ${isJasa ? 'checked' : ''}></td>
             <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow('${rowId}')"><i class="fas fa-trash"></i></button></td>
         `;
         tbody.appendChild(row);
@@ -894,7 +916,8 @@
             const qty = row.querySelector('.item-qty').value;
             const price = row.querySelector('.item-price').value;
             if (name && qty && price) {
-                items.push({ nama: name, jumlah: parseInt(qty), harga_satuan: parseFloat(price) });
+                const isJasa = row.querySelector('.item-jasa')?.checked || false;
+                items.push({ nama: name, jumlah: parseInt(qty), harga_satuan: parseFloat(price), is_jasa: isJasa });
             }
         });
         document.getElementById('rincian_item_json').value = JSON.stringify(items);
@@ -927,7 +950,8 @@
             const qty = row.querySelector('.item-qty').value;
             const price = row.querySelector('.item-price').value;
             if (name && qty && price) {
-                items.push({ nama: name, jumlah: parseInt(qty), harga_satuan: parseFloat(price) });
+                const isJasa = row.querySelector('.item-jasa')?.checked || false;
+                items.push({ nama: name, jumlah: parseInt(qty), harga_satuan: parseFloat(price), is_jasa: isJasa });
             }
         });
         document.getElementById('edit_rincian_item_json').value = JSON.stringify(items);
@@ -940,33 +964,43 @@
             $('#edit_periode_lengkap').val(formatPeriodeLengkap(data.periode_type, data.periode_number)).trigger('change');
             $('#edit_rekanan_id').val(data.rekanan_id).trigger('change');
             $('#edit_tanggal_kuitansi').val(data.tanggal_kuitansi);
-            $('#edit_jenis_pph').val(data.jenis_pph || '').trigger('change');
             $('#edit_untuk_pembayaran').val(data.untuk_pembayaran);
             $('#edit_pptk_1_id').val(data.pptk_1_id).trigger('change');
             
-            // Populate kode_objek_pajak with full formatted text
+            // Populate PPH 22 kode
             if (data.kode_objek_pajak) {
-                const kode = data.kode_objek_pajak;
-                const option = $(`#kodeObjekPajakList option[value="${kode}"]`);
-                
-                if (option.length > 0) {
-                    // Set full text format: "kode - nama (tarif%)"
-                    $('#edit_kode_objek_pajak').val(option.text());
-                } else {
-                    // Fallback: just set the code
-                    $('#edit_kode_objek_pajak').val(kode);
-                }
-                
-                // Set hidden tarif field
-                if (data.tarif_pajak) {
-                    $('#edit_tarif_pajak').val(data.tarif_pajak);
-                }
+                const kode22 = data.kode_objek_pajak;
+                const opt22 = $(`#kodeObjekPajakList option[value="${kode22}"]`);
+                $('#edit_kode_objek_pajak_22').val(opt22.length > 0 ? opt22.text() : kode22);
+                $('#edit_tarif_pajak').val(data.tarif_pajak || '0');
             } else {
-                $('#edit_kode_objek_pajak').val('');
+                $('#edit_kode_objek_pajak_22').val('');
                 $('#edit_tarif_pajak').val('0');
             }
             
+            // Populate PPH 23 kode
+            if (data.kode_objek_pajak_23) {
+                const kode23 = data.kode_objek_pajak_23;
+                const opt23 = $(`#kodeObjekPajakList option[value="${kode23}"]`);
+                $('#edit_kode_objek_pajak_23').val(opt23.length > 0 ? opt23.text() : kode23);
+                $('#edit_tarif_pajak_23').val(data.tarif_pajak_23 || '0');
+            } else {
+                $('#edit_kode_objek_pajak_23').val('');
+                $('#edit_tarif_pajak_23').val('0');
+            }
+            
             $('#editForm').attr('action', '/kuitansi/' + id);
+
+            // Populate item rows
+            $('#editItemsBody').empty();
+            editItemCounter = 0;
+            if (data.rincian_item && Array.isArray(data.rincian_item)) {
+                data.rincian_item.forEach(function(item) {
+                    addEditItemRowWithData(item.nama, item.jumlah, item.harga_satuan, item.is_jasa || false);
+                });
+            }
+            calculateEditPPH();
+            calculateEditTotalAkhir();
         });
     });
 

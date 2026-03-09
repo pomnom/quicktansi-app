@@ -69,8 +69,9 @@ class KuitansiController extends Controller
             'nomor_urut' => 'required|string|max:3',
             'rekanan_id' => 'required|exists:rekanans,id',
             'tanggal_kuitansi' => 'required|date',
-            'jenis_pph' => 'nullable|in:22,23',
             'rincian_item_json' => 'nullable|json',
+            'kode_objek_pajak_23' => 'nullable|string|max:100',
+            'tarif_pajak_23' => 'nullable|numeric',
             'pptk_1_id' => 'required|exists:staff,id',
         ]);
 
@@ -86,40 +87,53 @@ class KuitansiController extends Controller
             $rincianItem = json_decode($request->rincian_item_json, true);
         }
 
-        // Calculate DPP from items
-        $dpp = 0;
+        // Calculate DPP total, DPP Barang (non-jasa), DPP Jasa
+        $dpp = 0; $dppBarang = 0; $dppJasa = 0;
         if (is_array($rincianItem)) {
             foreach ($rincianItem as $item) {
-                $jumlah = isset($item['jumlah']) ? (int) $item['jumlah'] : 0;
-                $harga = isset($item['harga_satuan']) ? (float) $item['harga_satuan'] : 0;
-                $dpp += $jumlah * $harga;
+                $jumlah = (int)($item['jumlah'] ?? 0);
+                $harga  = (float)($item['harga_satuan'] ?? 0);
+                $subtotal = $jumlah * $harga;
+                $dpp += $subtotal;
+                if (!empty($item['is_jasa'])) {
+                    $dppJasa += $subtotal;
+                } else {
+                    $dppBarang += $subtotal;
+                }
             }
         }
-        $dpp = (int) round($dpp);
+        $dpp      = (int) round($dpp);
+        $dppBarang = (int) round($dppBarang);
+        $dppJasa   = (int) round($dppJasa);
 
         // Calculate PPN (jika checkbox ppn_checkbox dicentang)
         $ppnAmount = 0;
         if ($request->has('ppn_checkbox') && $request->ppn_checkbox) {
-            $ppnAmount = (int) round($dpp * 0.11); // PPN 11%
+            $ppnAmount = (int) round($dpp * 0.11);
         }
-        
-        // Calculate PPH based on tarif_pajak from kode_objek_pajak
-        // PPH 22: hanya untuk belanja > 2.000.000
-        // PPH 23: berlaku untuk semua belanja
-        $pphAmount = 0;
-        if (!empty($request->tarif_pajak)) {
-            $tarifPajak = (float) $request->tarif_pajak;
-            $jenisPph = $request->jenis_pph ?? '';
-            
-            // Check if PPH 22 dengan amount <= 2M, maka tidak kena pajak
-            if ($jenisPph === '22' && $dpp <= 2000000) {
-                $pphAmount = 0;
-            } else {
-                // PPH 23 atau PPH 22 dengan belanja > 2M
-                $pphAmount = (int) round($dpp * $tarifPajak / 100);
-            }
+
+        // PPH 22: dari item barang, threshold > 2jt
+        $pph22Amount = 0;
+        $tarifPajak22 = (float) ($request->tarif_pajak ?? 0);
+        if ($tarifPajak22 > 0 && $dppBarang > 2000000) {
+            $pph22Amount = (int) round($dppBarang * $tarifPajak22 / 100);
         }
-        
+
+        // PPH 23: dari item jasa saja
+        $pph23Amount = 0;
+        $tarifPajak23 = (float) ($request->tarif_pajak_23 ?? 0);
+        if ($tarifPajak23 > 0 && $dppJasa > 0) {
+            $pph23Amount = (int) round($dppJasa * $tarifPajak23 / 100);
+        }
+
+        $pphAmount = $pph22Amount + $pph23Amount;
+
+        // Derive jenis_pph
+        if ($pph22Amount > 0 && $pph23Amount > 0) $jenisPph = '22,23';
+        elseif ($pph22Amount > 0) $jenisPph = '22';
+        elseif ($pph23Amount > 0) $jenisPph = '23';
+        else $jenisPph = '';
+
         // Total Akhir = DPP + PPN - PPH
         $totalAkhir = $dpp + $ppnAmount - $pphAmount;
         
@@ -150,12 +164,16 @@ class KuitansiController extends Controller
             'tanggal_kuitansi' => $request->tanggal_kuitansi,
             'ppn' => $ppnAmount,
             'pph' => $pphAmount,
-            'jenis_pph' => $request->jenis_pph,
+            'pph_22' => $pph22Amount,
+            'pph_23' => $pph23Amount,
+            'jenis_pph' => $jenisPph,
             'untuk_pembayaran' => $request->untuk_pembayaran,
             'total_akhir' => $totalAkhir,
             'rincian_item' => $rincianItem,
-            'kode_objek_pajak' => $request->kode_objek_pajak,
-            'tarif_pajak' => $request->tarif_pajak,
+            'kode_objek_pajak' => $request->kode_objek_pajak ?: null,
+            'tarif_pajak' => $request->tarif_pajak ?: null,
+            'kode_objek_pajak_23' => $request->kode_objek_pajak_23 ?: null,
+            'tarif_pajak_23' => $request->tarif_pajak_23 ?: null,
             'dpp' => $dpp,
             'jenis_dokumen' => $request->jenis_dokumen ?? 'PaymentProof',
             'tanggal_pemotongan' => $request->tanggal_pemotongan ?? $request->tanggal_kuitansi,
@@ -190,6 +208,8 @@ class KuitansiController extends Controller
             'tanggal_kuitansi' => 'required|date',
             'jenis_pph' => 'nullable|in:22,23',
             'rincian_item_json' => 'nullable|json',
+            'kode_objek_pajak_23' => 'nullable|string|max:100',
+            'tarif_pajak_23' => 'nullable|numeric',
             'pptk_1_id' => 'required|exists:staff,id',
         ]);
 
@@ -206,39 +226,52 @@ class KuitansiController extends Controller
             $rincianItem = json_decode($request->rincian_item_json, true);
         }
 
-        // Calculate DPP from items
-        $dpp = 0;
+        // Calculate DPP total, DPP Barang (non-jasa), DPP Jasa
+        $dpp = 0; $dppBarang = 0; $dppJasa = 0;
         if (is_array($rincianItem)) {
             foreach ($rincianItem as $item) {
-                $jumlah = isset($item['jumlah']) ? (int) $item['jumlah'] : 0;
-                $harga = isset($item['harga_satuan']) ? (float) $item['harga_satuan'] : 0;
-                $dpp += $jumlah * $harga;
+                $jumlah = (int)($item['jumlah'] ?? 0);
+                $harga  = (float)($item['harga_satuan'] ?? 0);
+                $subtotal = $jumlah * $harga;
+                $dpp += $subtotal;
+                if (!empty($item['is_jasa'])) {
+                    $dppJasa += $subtotal;
+                } else {
+                    $dppBarang += $subtotal;
+                }
             }
         }
-        $dpp = (int) round($dpp);
+        $dpp      = (int) round($dpp);
+        $dppBarang = (int) round($dppBarang);
+        $dppJasa   = (int) round($dppJasa);
 
         // Calculate PPN (jika checkbox ppn_checkbox dicentang)
         $ppnAmount = 0;
         if ($request->has('ppn_checkbox') && $request->ppn_checkbox) {
-            $ppnAmount = (int) round($dpp * 0.11); // PPN 11%
+            $ppnAmount = (int) round($dpp * 0.11);
         }
-        
-        // Calculate PPH based on tarif_pajak from kode_objek_pajak
-        // PPH 22: hanya untuk belanja > 2.000.000
-        // PPH 23: berlaku untuk semua belanja
-        $pphAmount = 0;
-        if (!empty($request->tarif_pajak)) {
-            $tarifPajak = (float) $request->tarif_pajak;
-            $jenisPph = $request->jenis_pph ?? '';
-            
-            // Check if PPH 22 dengan amount <= 2M, maka tidak kena pajak
-            if ($jenisPph === '22' && $dpp <= 2000000) {
-                $pphAmount = 0;
-            } else {
-                // PPH 23 atau PPH 22 dengan belanja > 2M
-                $pphAmount = (int) round($dpp * $tarifPajak / 100);
-            }
+
+        // PPH 22: dari item barang, threshold > 2jt
+        $pph22Amount = 0;
+        $tarifPajak22 = (float) ($request->tarif_pajak ?? 0);
+        if ($tarifPajak22 > 0 && $dppBarang > 2000000) {
+            $pph22Amount = (int) round($dppBarang * $tarifPajak22 / 100);
         }
+
+        // PPH 23: dari item jasa saja
+        $pph23Amount = 0;
+        $tarifPajak23 = (float) ($request->tarif_pajak_23 ?? 0);
+        if ($tarifPajak23 > 0 && $dppJasa > 0) {
+            $pph23Amount = (int) round($dppJasa * $tarifPajak23 / 100);
+        }
+
+        $pphAmount = $pph22Amount + $pph23Amount;
+
+        // Derive jenis_pph
+        if ($pph22Amount > 0 && $pph23Amount > 0) $jenisPph = '22,23';
+        elseif ($pph22Amount > 0) $jenisPph = '22';
+        elseif ($pph23Amount > 0) $jenisPph = '23';
+        else $jenisPph = '';
         
         // Total Akhir = DPP + PPN - PPH
         $totalAkhir = $dpp + $ppnAmount - $pphAmount;
@@ -271,12 +304,16 @@ class KuitansiController extends Controller
             'tanggal_kuitansi' => $request->tanggal_kuitansi,
             'ppn' => $ppnAmount,
             'pph' => $pphAmount,
-            'jenis_pph' => $request->jenis_pph,
+            'pph_22' => $pph22Amount,
+            'pph_23' => $pph23Amount,
+            'jenis_pph' => $jenisPph,
             'untuk_pembayaran' => $request->untuk_pembayaran,
             'total_akhir' => $totalAkhir,
             'rincian_item' => $rincianItem,
-            'kode_objek_pajak' => $request->kode_objek_pajak,
-            'tarif_pajak' => $request->tarif_pajak,
+            'kode_objek_pajak' => $request->kode_objek_pajak ?: null,
+            'tarif_pajak' => $request->tarif_pajak ?: null,
+            'kode_objek_pajak_23' => $request->kode_objek_pajak_23 ?: null,
+            'tarif_pajak_23' => $request->tarif_pajak_23 ?: null,
             'dpp' => $dpp,
             'jenis_dokumen' => $request->jenis_dokumen ?? 'PaymentProof',
             'tanggal_pemotongan' => $request->tanggal_pemotongan ?? $request->tanggal_kuitansi,

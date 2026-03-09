@@ -77,8 +77,10 @@
     @php
         use App\Helpers\NumberToWordHelper;
         
-        $ppnAmount = (int) ($kuitansi->ppn ?? 0);
-        $pphAmount = (int) ($kuitansi->pph ?? 0);
+        $ppnAmount  = (int) ($kuitansi->ppn    ?? 0);
+        $pphAmount  = (int) ($kuitansi->pph    ?? 0);
+        $pph22Amount = (int) ($kuitansi->pph_22 ?? 0);
+        $pph23Amount = (int) ($kuitansi->pph_23 ?? 0);
         $totalAkhir = (int) ($kuitansi->total_akhir ?? 0);
         
         $terbilang = NumberToWordHelper::terbilang($totalAkhir);
@@ -122,9 +124,10 @@
             @php 
                 $itemTotal = $item['jumlah'] * $item['harga_satuan'];
                 $grandTotal += $itemTotal;
+                $isJasa = !empty($item['is_jasa']);
             @endphp
             <tr>
-                <td>{{ $item['nama'] }}</td>
+                <td>{{ $item['nama'] }}@if($isJasa) <em style="font-size:10px; color:#36b9cc;">(Jasa)</em>@endif</td>
                 <td class="number">{{ $item['jumlah'] }}</td>
                 <td class="number">{{ number_format($item['harga_satuan'], 2, ',', '.') }}</td>
                 <td class="number">{{ number_format($itemTotal, 2, ',', '.') }}</td>
@@ -139,16 +142,30 @@
     <table class="amount-section">
         @if($ppnAmount > 0)
         <tr>
-            <td class="label">PPN</td>
+            <td class="label">PPN 11%</td>
             <td class="colon">:</td>
             <td class="value">Rp {{ number_format($ppnAmount, 0, ',', '.') }}</td>
         </tr>
         @endif
-        @if($pphAmount > 0)
+        @if($pph22Amount > 0)
         <tr>
-            <td class="label">PPH {{ $kuitansi->jenis_pph ?? '-' }}</td>
+            <td class="label">PPH 22 (Barang)</td>
             <td class="colon">:</td>
-            <td class="value">Rp {{ number_format($pphAmount, 0, ',', '.') }}</td>
+            <td class="value">Rp {{ number_format($pph22Amount, 0, ',', '.') }}</td>
+        </tr>
+        @endif
+        @if($pph23Amount > 0)
+        <tr>
+            <td class="label">PPH 23 (Jasa)</td>
+            <td class="colon">:</td>
+            <td class="value">Rp {{ number_format($pph23Amount, 0, ',', '.') }}</td>
+        </tr>
+        @endif
+        @if($pphAmount > 0 && $pph22Amount > 0 && $pph23Amount > 0)
+        <tr>
+            <td class="label" style="font-style:italic;">Total PPH</td>
+            <td class="colon">:</td>
+            <td class="value" style="font-weight:bold;">Rp {{ number_format($pphAmount, 0, ',', '.') }}</td>
         </tr>
         @endif
     </table>
