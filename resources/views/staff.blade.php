@@ -2,69 +2,240 @@
 
 @section('title', 'Staff')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/dashboard-custom.css') }}">
+<style>
+    th, td { vertical-align: middle !important; }
+    #dataTable thead th {
+        background: #f0f2fc;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #5a5c69;
+        border-bottom: 2px solid #d1d3e2;
+        white-space: nowrap;
+    }
+    #dataTable tbody tr:hover td { background: #f8f9ff; }
+    #dataTable tbody td { font-size: 13px; color: #5a5c69; }
+    .staff-action-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .staff-action-bar .btn { border-radius: 10px; font-weight: 600; font-size: 13px; padding: 8px 18px; }
+    .nip-text { font-family: monospace; font-size: 12px; color: #5a5c69; letter-spacing: 0.4px; }
+    .golongan-badge {
+        background: rgba(246,194,62,0.15);
+        color: #a07800;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+    /* Status badge colours */
+    .status-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+    .status-pa   { background: rgba(78,115,223,0.12); color: #3355bb; }
+    .status-ppk  { background: rgba(28,200,138,0.12); color: #0f7a52; }
+    .status-pptk { background: rgba(54,185,204,0.15); color: #1a7987; }
+    .status-bpng { background: rgba(246,194,62,0.18); color: #a07800; }
+    .status-bbrg { background: rgba(231,74,59,0.12);  color: #b93025; }
+    .status-none { background: #f0f2f5; color: #adb5bd; }
+
+    .hero-stats-strip {
+        display: flex; gap: 24px; margin-top: 18px; flex-wrap: wrap;
+    }
+    .hero-stats-strip .hs-item {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 10px; padding: 8px 16px;
+    }
+    .hero-stats-strip .hs-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.7); }
+    .hero-stats-strip .hs-value { font-size: 18px; font-weight: 800; color: #fff; line-height: 1.1; }
+    .hero-stats-strip .hs-icon  { font-size: 22px; color: rgba(255,255,255,0.35); }
+</style>
+@endpush
+
 @section('content')
-<!-- Page Heading -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h1 class="h3 text-gray-800 mb-0">
-            <i class="fas fa-users text-primary mr-2"></i>Staff
-        </h1>
+
+@php
+    $totalStaff  = $staff->count();
+    $totalPptk   = $staff->where('status', 'PPTK')->count();
+    $totalBendahara = $staff->whereIn('status', ['Bendahara Pengeluaran','Bendahara Barang'])->count();
+    $totalBerStatus = $staff->whereNotNull('status')->where('status','!=','')->count();
+@endphp
+
+<!-- Hero Banner -->
+<div class="dashboard-hero mb-4">
+    <div class="d-flex align-items-center justify-content-between" style="position:relative;z-index:1;">
+        <div>
+            <div class="hero-badge">
+                <i class="fas fa-circle" style="font-size:7px;color:#1cc88a;"></i> Manajemen Staff
+            </div>
+            <div class="hero-title">Data Staff</div>
+            <p class="hero-sub">Kelola daftar staff, jabatan, golongan, dan peran dalam pengelolaan anggaran.</p>
+            <div class="hero-date">
+                <i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+            </div>
+        </div>
+        <div class="hero-icon d-none d-md-flex">
+            <i class="fas fa-users"></i>
+        </div>
     </div>
-    <div class="col-md-6 text-right">
-        <button class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#addStaffModal">
-            <i class="fas fa-plus mr-2"></i>Tambah Staff
-        </button>
+    <div class="hero-stats-strip">
+        <div class="hs-item">
+            <i class="fas fa-id-card-alt hs-icon"></i>
+            <div>
+                <div class="hs-label">Total Staff</div>
+                <div class="hs-value">{{ $totalStaff }}</div>
+            </div>
+        </div>
+        <div class="hs-item">
+            <i class="fas fa-user-tie hs-icon"></i>
+            <div>
+                <div class="hs-label">PPTK</div>
+                <div class="hs-value">{{ $totalPptk }}</div>
+            </div>
+        </div>
+        <div class="hs-item">
+            <i class="fas fa-coins hs-icon"></i>
+            <div>
+                <div class="hs-label">Bendahara</div>
+                <div class="hs-value">{{ $totalBendahara }}</div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Stat Cards -->
+<div class="row mb-2">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-primary h-100">
+            <div class="card-body">
+                <div class="stat-label">Total Staff</div>
+                <div class="stat-value">{{ $totalStaff }}</div>
+                <i class="fas fa-users stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-folder-open"></i>Semua staff terdaftar</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-info h-100">
+            <div class="card-body">
+                <div class="stat-label">PPTK</div>
+                <div class="stat-value">{{ $totalPptk }}</div>
+                <i class="fas fa-user-tie stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-briefcase"></i>Pejabat Pelaksana Teknis</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-warning h-100">
+            <div class="card-body">
+                <div class="stat-label">Bendahara</div>
+                <div class="stat-value">{{ $totalBendahara }}</div>
+                <i class="fas fa-coins stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-wallet"></i>Pengeluaran &amp; Barang</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-success h-100">
+            <div class="card-body">
+                <div class="stat-label">Punya Jabatan Fungsional</div>
+                <div class="stat-value">{{ $totalBerStatus }}</div>
+                <i class="fas fa-award stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-check-circle"></i>Dari total {{ $totalStaff }} staff</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Bar -->
+<div class="staff-action-bar">
+    <button class="btn btn-primary" data-toggle="modal" data-target="#addStaffModal">
+        <i class="fas fa-plus mr-2"></i>Tambah Staff
+    </button>
+    <span class="text-muted small ml-auto align-self-center">
+        <i class="fas fa-info-circle mr-1"></i>{{ $totalStaff }} staff terdaftar
+    </span>
+</div>
+
 <!-- DataTable Card -->
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); border: none;">
-        <h6 class="m-0 font-weight-bold text-white">
-            <i class="fas fa-table mr-2"></i>Data Staff
-        </h6>
-        <span class="badge badge-light">{{ count($staff) }} data</span>
+<div class="card recent-card mb-4">
+    <div class="card-header">
+        <div class="header-icon"><i class="fas fa-table"></i></div>
+        <h6>Data Staff</h6>
+        <span class="badge badge-light ml-2" style="color:#5a5c69;">{{ $totalStaff }} data</span>
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered table-hover" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
-                <thead style="background-color: #f8f9fc;">
+            <table class="table table-bordered table-hover mb-0" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
+                <thead>
                     <tr>
                         <th style="width: 50px;" class="text-center">#</th>
-                        <th><i class="fas fa-id-badge text-primary mr-1"></i>NIP</th>
-                        <th><i class="fas fa-user text-primary mr-1"></i>Nama</th>
-                        <th><i class="fas fa-briefcase text-primary mr-1"></i>Jabatan</th>
-                        <th><i class="fas fa-award text-primary mr-1"></i>Golongan</th>
-                        <th><i class="fas fa-info-circle text-primary mr-1"></i>Status</th>
-                        <th style="width: 100px;" class="text-center"><i class="fas fa-cogs text-primary mr-1"></i>Aksi</th>
+                        <th>NIP</th>
+                        <th>Nama</th>
+                        <th>Jabatan</th>
+                        <th>Golongan</th>
+                        <th>Status</th>
+                        <th style="width: 100px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($staff as $index => $s)
+                    @php
+                        $statusClass = match($s->status) {
+                            'Pengguna Anggaran'    => 'status-pa',
+                            'PPK'                  => 'status-ppk',
+                            'PPTK'                 => 'status-pptk',
+                            'Bendahara Pengeluaran'=> 'status-bpng',
+                            'Bendahara Barang'     => 'status-bbrg',
+                            default                => 'status-none',
+                        };
+                        $statusIcon = match($s->status) {
+                            'Pengguna Anggaran'    => 'fa-star',
+                            'PPK'                  => 'fa-shield-alt',
+                            'PPTK'                 => 'fa-user-tie',
+                            'Bendahara Pengeluaran'=> 'fa-coins',
+                            'Bendahara Barang'     => 'fa-boxes',
+                            default                => 'fa-minus',
+                        };
+                    @endphp
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <td>{{ $s->nip }}</td>
-                        <td>{{ $s->nama }}</td>
+                        <td class="text-center text-muted">{{ $index + 1 }}</td>
+                        <td><span class="nip-text">{{ $s->nip }}</span></td>
+                        <td><strong>{{ $s->nama }}</strong></td>
                         <td>{{ $s->jabatan }}</td>
-                        <td>{{ $s->golongan }}</td>
+                        <td><span class="golongan-badge">{{ $s->golongan }}</span></td>
                         <td>
-                            @if($s->status)
-                                <span class="badge badge-info">{{ $s->status }}</span>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
+                            <span class="status-badge {{ $statusClass }}">
+                                <i class="fas {{ $statusIcon }} mr-1"></i>{{ $s->status ?: 'Tanpa Status' }}
+                            </span>
                         </td>
                         <td class="text-center">
-                            <button class="btn btn-info btn-sm mr-1" title="Edit" onclick="editStaff({{ $s }})">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <form action="{{ route('staff.destroy', $s->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" title="Hapus">
-                                    <i class="fas fa-trash"></i>
+                            <div class="d-inline-flex" style="gap:4px;">
+                                <button class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit" onclick="editStaff({{ $s }})">
+                                    <i class="fas fa-edit"></i>
                                 </button>
-                            </form>
+                                <form action="{{ route('staff.destroy', $s->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus staff ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm" style="border-radius:8px;" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @endforeach
@@ -77,8 +248,8 @@
 <!-- Add Staff Modal -->
 <div class="modal fade" id="addStaffModal" tabindex="-1" role="dialog" aria-labelledby="addStaffModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); border: none;">
+        <div class="modal-content border-left-primary">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="addStaffModalLabel">
                     <i class="fas fa-plus mr-2"></i>Tambah Staff Baru
                 </h5>
@@ -133,8 +304,8 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius:10px;"><i class="fas fa-times mr-1"></i>Batal</button>
+                    <button type="submit" class="btn btn-primary" style="border-radius:10px;"><i class="fas fa-save mr-1"></i>Simpan</button>
                 </div>
             </form>
         </div>
@@ -144,8 +315,8 @@
 <!-- Edit Staff Modal -->
 <div class="modal fade" id="editStaffModal" tabindex="-1" role="dialog" aria-labelledby="editStaffModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white" style="background: linear-gradient(135deg, #36b9cc 0%, #258391 100%); border: none;">
+        <div class="modal-content border-left-info">
+            <div class="modal-header bg-info text-white">
                 <h5 class="modal-title" id="editStaffModalLabel">
                     <i class="fas fa-edit mr-2"></i>Edit Staff
                 </h5>
@@ -186,8 +357,8 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-info">Update</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius:10px;"><i class="fas fa-times mr-1"></i>Batal</button>
+                    <button type="submit" class="btn btn-info" style="border-radius:10px;"><i class="fas fa-save mr-1"></i>Update</button>
                 </div>
             </form>
         </div>

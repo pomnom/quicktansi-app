@@ -2,61 +2,191 @@
 
 @section('title', 'Rekanan')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/dashboard-custom.css') }}">
+<style>
+    th, td { vertical-align: middle !important; }
+    #dataTable thead th {
+        background: #f0f2fc;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #5a5c69;
+        border-bottom: 2px solid #d1d3e2;
+        white-space: nowrap;
+    }
+    #dataTable tbody tr:hover td { background: #f8f9ff; }
+    #dataTable tbody td { font-size: 13px; color: #5a5c69; }
+    .rekanan-action-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .rekanan-action-bar .btn { border-radius: 10px; font-weight: 600; font-size: 13px; padding: 8px 18px; }
+    .bank-badge {
+        background: rgba(78,115,223,0.1);
+        color: #4e73df;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+    .npwp-text {
+        font-family: monospace;
+        font-size: 12px;
+        color: #5a5c69;
+        letter-spacing: 0.5px;
+    }
+    .hero-stats-strip {
+        display: flex;
+        gap: 24px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+    }
+    .hero-stats-strip .hs-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 10px;
+        padding: 8px 16px;
+    }
+    .hero-stats-strip .hs-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.7); }
+    .hero-stats-strip .hs-value { font-size: 18px; font-weight: 800; color: #fff; line-height: 1.1; }
+    .hero-stats-strip .hs-icon { font-size: 22px; color: rgba(255,255,255,0.35); }
+</style>
+@endpush
+
 @section('content')
-<!-- Page Heading -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h1 class="h3 text-gray-800 mb-0">
-            <i class="fas fa-building text-primary mr-2"></i>Rekanan
-        </h1>
+
+@php
+    $totalRekanan = $rekanans->count();
+    $banks = $rekanans->pluck('bank')->filter()->unique()->count();
+@endphp
+
+<!-- Hero Banner -->
+<div class="dashboard-hero mb-4">
+    <div class="d-flex align-items-center justify-content-between" style="position:relative;z-index:1;">
+        <div>
+            <div class="hero-badge">
+                <i class="fas fa-circle" style="font-size:7px;color:#1cc88a;"></i> Manajemen Rekanan
+            </div>
+            <div class="hero-title">Data Rekanan</div>
+            <p class="hero-sub">Kelola rekanan dan informasi rekening bank secara terpusat.</p>
+            <div class="hero-date">
+                <i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+            </div>
+        </div>
+        <div class="hero-icon d-none d-md-flex">
+            <i class="fas fa-handshake"></i>
+        </div>
     </div>
-    <div class="col-md-6 text-right">
-        <button class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#addRekananModal">
-            <i class="fas fa-plus mr-2"></i>Tambah Rekanan
-        </button>
+    <div class="hero-stats-strip">
+        <div class="hs-item">
+            <i class="fas fa-building hs-icon"></i>
+            <div>
+                <div class="hs-label">Total Rekanan</div>
+                <div class="hs-value">{{ number_format($totalRekanan, 0, ',', '.') }}</div>
+            </div>
+        </div>
+        <div class="hs-item">
+            <i class="fas fa-university hs-icon"></i>
+            <div>
+                <div class="hs-label">Bank Terdaftar</div>
+                <div class="hs-value">{{ $banks }}</div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Stat Cards -->
+<div class="row mb-2">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-primary h-100">
+            <div class="card-body">
+                <div class="stat-label">Total Rekanan</div>
+                <div class="stat-value">{{ number_format($totalRekanan, 0, ',', '.') }}</div>
+                <i class="fas fa-building stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-folder-open"></i>Semua rekanan terdaftar</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-success h-100">
+            <div class="card-body">
+                <div class="stat-label">Bank Terdaftar</div>
+                <div class="stat-value">{{ $banks }}</div>
+                <i class="fas fa-university stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-check-circle"></i>Varian bank unik</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-info h-100">
+            <div class="card-body">
+                <div class="stat-label">Rekanan Terbaru</div>
+                <div class="stat-value" style="font-size:15px;">{{ $rekanans->first()?->nama_perusahaan ? \Illuminate\Support\Str::limit($rekanans->first()->nama_perusahaan, 20) : '-' }}</div>
+                <i class="fas fa-user-tie stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-clock"></i>Ditambahkan terakhir</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Bar -->
+<div class="rekanan-action-bar">
+    <button class="btn btn-primary" data-toggle="modal" data-target="#addRekananModal">
+        <i class="fas fa-plus mr-2"></i>Tambah Rekanan
+    </button>
+    <span class="text-muted small ml-auto align-self-center">
+        <i class="fas fa-info-circle mr-1"></i>{{ $totalRekanan }} rekanan terdaftar
+    </span>
+</div>
+
 <!-- DataTable Card -->
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); border: none;">
-        <h6 class="m-0 font-weight-bold text-white">
-            <i class="fas fa-table mr-2"></i>Data Rekanan
-        </h6>
-        <span class="badge badge-light">{{ count($rekanans) }} data</span>
+<div class="card recent-card mb-4">
+    <div class="card-header">
+        <div class="header-icon"><i class="fas fa-table"></i></div>
+        <h6>Data Rekanan</h6>
+        <span class="badge badge-light ml-2" style="color:#5a5c69;">{{ $totalRekanan }} data</span>
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered table-hover" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
-                <thead style="background-color: #f8f9fc;">
+            <table class="table table-bordered table-hover mb-0" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
+                <thead>
                     <tr>
                         <th style="width: 50px;" class="text-center">#</th>
-                        <th><i class="fas fa-id-card text-primary mr-1"></i>NPWP</th>
-                        <th><i class="fas fa-building text-primary mr-1"></i>Nama Perusahaan</th>
-                        <th><i class="fas fa-credit-card text-primary mr-1"></i>No. Rekening</th>
-                        <th><i class="fas fa-university text-primary mr-1"></i>Bank</th>
-                        <th><i class="fas fa-user text-primary mr-1"></i>Nama Pemilik Rekening</th>
-                        <th style="width: 100px;" class="text-center"><i class="fas fa-cogs text-primary mr-1"></i>Aksi</th>
+                        <th>NPWP</th>
+                        <th>Nama Perusahaan</th>
+                        <th>No. Rekening</th>
+                        <th>Bank</th>
+                        <th>Nama Pemilik Rekening</th>
+                        <th style="width: 100px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($rekanans as $index => $rekanan)
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <td>{{ $rekanan->npwp }}</td>
-                        <td>{{ $rekanan->nama_perusahaan }}</td>
-                        <td>{{ $rekanan->nomor_rekening }}</td>
-                        <td>{{ $rekanan->bank }}</td>
+                        <td class="text-center text-muted">{{ $index + 1 }}</td>
+                        <td><span class="npwp-text">{{ $rekanan->npwp }}</span></td>
+                        <td><strong>{{ $rekanan->nama_perusahaan }}</strong></td>
+                        <td><code style="font-size:12px;color:#5a5c69;">{{ $rekanan->nomor_rekening }}</code></td>
+                        <td><span class="bank-badge">{{ $rekanan->bank }}</span></td>
                         <td>{{ $rekanan->nama_pemilik_rekening }}</td>
                         <td class="text-center">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button class="btn btn-info btn-sm" title="Edit" onclick='editRekanan(@json($rekanan))'>
+                            <div class="d-inline-flex" style="gap:4px;">
+                                <button class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit" onclick='editRekanan(@json($rekanan))'>
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <form action="{{ route('rekanan.destroy', $rekanan->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                <form action="{{ route('rekanan.destroy', $rekanan->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus rekanan ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" title="Hapus">
+                                    <button type="submit" class="btn btn-danger btn-sm" style="border-radius:8px;" title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -122,8 +252,8 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius:10px;"><i class="fas fa-times mr-1"></i>Batal</button>
+                    <button type="submit" class="btn btn-primary" style="border-radius:10px;"><i class="fas fa-save mr-1"></i>Simpan</button>
                 </div>
             </form>
         </div>
@@ -168,8 +298,8 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-info">Update</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius:10px;"><i class="fas fa-times mr-1"></i>Batal</button>
+                    <button type="submit" class="btn btn-info" style="border-radius:10px;"><i class="fas fa-save mr-1"></i>Update</button>
                 </div>
             </form>
         </div>

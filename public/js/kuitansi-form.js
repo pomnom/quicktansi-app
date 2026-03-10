@@ -67,7 +67,7 @@ $(
 });
 
 // Calculate DPP when items are added/removed (for display purposes only)
-$(document).on("change", ".item-qty, .item-price", function () {
+$(document).on("change input", ".item-qty, .item-price", function () {
     calculatePPH();
     calculateTotalAkhir();
     calculateEditPPH();

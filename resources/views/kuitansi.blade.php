@@ -2,37 +2,202 @@
 
 @section('title', 'Kuitansi')
 
-@section('content')
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/dashboard-custom.css') }}">
 <style>
     th, td { vertical-align: middle !important; }
-    .filter-panel { background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 14px; padding: 1.2rem; margin-bottom: 1.2rem; }
     .kuitansi-checkbox, #selectAllCheckbox { width: 16px; height: 16px; cursor: pointer; margin: 0; position: static; }
     .aksi-buttons .btn { min-width: 32px; border-radius: 8px; }
+
+    /* Filter Collapsible */
+    .filter-panel-wrap {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 14px;
+        margin-bottom: 1.2rem;
+        overflow: hidden;
+    }
+    .filter-panel-header {
+        padding: 0.9rem 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        user-select: none;
+    }
+    .filter-panel-header:hover { background: #eef0f8; }
+    .filter-panel-body { padding: 0 1.2rem 1.2rem; }
+    .filter-toggle-icon { transition: transform 0.25s; }
+    .filter-toggle-icon.rotated { transform: rotate(180deg); }
+
+    /* Action bar */
+    .kuitansi-action-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .kuitansi-action-bar .btn { border-radius: 10px; font-weight: 600; font-size: 13px; padding: 8px 18px; }
+
+    /* Table polish */
+    #dataTable thead th {
+        background: #f0f2fc;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #5a5c69;
+        border-bottom: 2px solid #d1d3e2;
+        white-space: nowrap;
+    }
+    #dataTable tbody tr:hover td { background: #f8f9ff; }
+    #dataTable tbody td { font-size: 13px; color: #5a5c69; }
+
+    /* Hero quick stats strip */
+    .hero-stats-strip {
+        display: flex;
+        gap: 24px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+    }
+    .hero-stats-strip .hs-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 10px;
+        padding: 8px 16px;
+    }
+    .hero-stats-strip .hs-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.7); }
+    .hero-stats-strip .hs-value { font-size: 18px; font-weight: 800; color: #fff; line-height: 1.1; }
+    .hero-stats-strip .hs-icon { font-size: 22px; color: rgba(255,255,255,0.35); }
+
+    /* Form section labels */
+    .form-section-icon {
+        width: 26px; height: 26px; border-radius: 6px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 12px; flex-shrink: 0;
+    }
 </style>
 @endpush
+
+@section('content')
+
+@php
+    $totalKuitansi = $kuitansis->count();
+    $totalNominal  = $kuitansis->sum('total_akhir');
+    $bulanIni      = $kuitansis->filter(fn($k) => $k->tanggal_kuitansi && \Carbon\Carbon::parse($k->tanggal_kuitansi)->isCurrentMonth());
+    $countBulanIni = $bulanIni->count();
+    $nominalBulanIni = $bulanIni->sum('total_akhir');
+@endphp
 
 <!-- Hero Banner -->
 <div class="dashboard-hero mb-4">
     <div class="d-flex align-items-center justify-content-between" style="position:relative;z-index:1;">
         <div>
             <div class="hero-badge">
-                <i class="fas fa-circle" style="font-size:7px;color:#4e73df;"></i> Kuitansi
+                <i class="fas fa-circle" style="font-size:7px;color:#1cc88a;"></i> Manajemen Kuitansi
             </div>
-            <div class="hero-title">Manajemen Kuitansi</div>
-            <p class="hero-sub">Kelola, filter, dan ekspor kuitansi dengan mudah.</p>
+            <div class="hero-title">Data Kuitansi</div>
+            <p class="hero-sub">Kelola, filter, dan ekspor kuitansi instansi Anda.</p>
+            <div class="hero-date">
+                <i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+            </div>
         </div>
         <div class="hero-icon d-none d-md-flex">
             <i class="fas fa-receipt"></i>
         </div>
     </div>
-    <div class="hero-date mt-2">
-        <i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+    <div class="hero-stats-strip">
+        <div class="hs-item">
+            <i class="fas fa-file-invoice hs-icon"></i>
+            <div>
+                <div class="hs-label">Total Kuitansi</div>
+                <div class="hs-value">{{ number_format($totalKuitansi, 0, ',', '.') }}</div>
+            </div>
+        </div>
+        <div class="hs-item">
+            <i class="fas fa-wallet hs-icon"></i>
+            <div>
+                <div class="hs-label">Total Nominal</div>
+                <div class="hs-value" style="font-size:14px;">Rp {{ number_format($totalNominal, 0, ',', '.') }}</div>
+            </div>
+        </div>
+        <div class="hs-item">
+            <i class="fas fa-calendar-check hs-icon"></i>
+            <div>
+                <div class="hs-label">Bulan Ini</div>
+                <div class="hs-value">{{ number_format($countBulanIni, 0, ',', '.') }}</div>
+            </div>
+        </div>
+        <div class="hs-item">
+            <i class="fas fa-money-bill-wave hs-icon"></i>
+            <div>
+                <div class="hs-label">Nominal Bulan Ini</div>
+                <div class="hs-value" style="font-size:14px;">Rp {{ number_format($nominalBulanIni, 0, ',', '.') }}</div>
+            </div>
+        </div>
     </div>
-    <div class="mt-3 text-white" style="font-size:13px;">
-        <i class="fas fa-info-circle mr-1"></i> Total data: <strong>{{ count($kuitansis) }}</strong>
+</div>
+
+<!-- Stat Cards -->
+<div class="row mb-2">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-primary h-100">
+            <div class="card-body">
+                <div class="stat-label">Total Kuitansi</div>
+                <div class="stat-value">{{ number_format($totalKuitansi, 0, ',', '.') }}</div>
+                <i class="fas fa-receipt stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-folder-open"></i>Semua periode</div>
+            </div>
+        </div>
     </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-success h-100">
+            <div class="card-body">
+                <div class="stat-label">Total Nominal</div>
+                <div class="stat-value small-value">Rp {{ number_format($totalNominal, 0, ',', '.') }}</div>
+                <i class="fas fa-wallet stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-folder-open"></i>Semua periode</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-warning h-100">
+            <div class="card-body">
+                <div class="stat-label">Kuitansi Bulan Ini</div>
+                <div class="stat-value">{{ number_format($countBulanIni, 0, ',', '.') }}</div>
+                <i class="fas fa-calendar-check stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-clock"></i>{{ \Carbon\Carbon::now()->locale('id')->isoFormat('MMMM YYYY') }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card card-gradient-info h-100">
+            <div class="card-body">
+                <div class="stat-label">Nominal Bulan Ini</div>
+                <div class="stat-value small-value">Rp {{ number_format($nominalBulanIni, 0, ',', '.') }}</div>
+                <i class="fas fa-money-bill-wave stat-icon"></i>
+                <div class="stat-footer"><i class="fas fa-clock"></i>{{ \Carbon\Carbon::now()->locale('id')->isoFormat('MMMM YYYY') }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Bar -->
+<div class="kuitansi-action-bar">
+    <button class="btn btn-primary" data-toggle="modal" data-target="#selectRekeningModal">
+        <i class="fas fa-plus mr-2"></i>Tambah Kuitansi
+    </button>
+    <button class="btn btn-success" id="exportXmlBtn" style="display:none;">
+        <i class="fas fa-download mr-2"></i>Export XML (<span id="selectedCount">0</span>)
+    </button>
+    <button class="btn btn-outline-secondary ml-auto" id="toggleFilterBtn" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="true">
+        <i class="fas fa-filter mr-2"></i>Filter
+        <i class="fas fa-chevron-up ml-1 filter-toggle-icon" id="filterChevron"></i>
+    </button>
 </div>
 
 <!-- DataTable Card -->
@@ -40,59 +205,83 @@
     <div class="card-header">
         <div class="header-icon"><i class="fas fa-table"></i></div>
         <h6>Data Kuitansi</h6>
-        <span class="badge badge-light ml-2">{{ count($kuitansis) }} data</span>
-        <button class="btn btn-sm btn-success ml-auto" id="exportXmlBtn" style="display:none;" title="Export XML dari kuitansi yang dipilih">
-            <i class="fas fa-download mr-1"></i>Export XML (<span id="selectedCount">0</span>)
-        </button>
+        <span class="badge badge-light ml-2" style="color:#5a5c69;">{{ $totalKuitansi }} data</span>
     </div>
     <div class="card-body">
-        <div class="filter-panel">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-filter mr-1"></i>Filter Data
-                </h6>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-3">
-                    <label for="filter_no_buku" class="small font-weight-bold">No. Buku</label>
-                    <input type="text" class="form-control" id="filter_no_buku" placeholder="Contoh: TU-1-001">
+
+        <!-- Filter Panel (Collapsible) -->
+        <div class="collapse show" id="filterCollapse">
+            <div class="filter-panel-wrap mb-3">
+                <div class="filter-panel-header" data-toggle="collapse" data-target="#filterInner" aria-expanded="true">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-sliders-h mr-2"></i>Filter Data
+                    </h6>
+                    <i class="fas fa-chevron-up text-muted filter-toggle-icon" id="filterInnerChevron"></i>
                 </div>
-                <div class="form-group col-md-3">
-                    <label for="filter_rekening" class="small font-weight-bold">Nomor Rekening</label>
-                    <input type="text" class="form-control" id="filter_rekening" placeholder="Cari rekening">
-                </div>
-                <div class="form-group col-md-3">
-                    <label for="filter_penerima" class="small font-weight-bold">Nama Penerima</label>
-                    <input type="text" class="form-control" id="filter_penerima" placeholder="Cari penerima">
-                </div>
-                <div class="form-group col-md-3">
-                    <label for="filter_pembayaran" class="small font-weight-bold">Untuk Pembayaran</label>
-                    <input type="text" class="form-control" id="filter_pembayaran" placeholder="Cari pembayaran">
-                </div>
-            </div>
-            <div class="form-row align-items-end">
-                <div class="form-group col-md-3">
-                    <label for="filter_tanggal_mulai" class="small font-weight-bold">Tanggal Mulai</label>
-                    <input type="date" class="form-control" id="filter_tanggal_mulai">
-                </div>
-                <div class="form-group col-md-3">
-                    <label for="filter_tanggal_selesai" class="small font-weight-bold">Tanggal Selesai</label>
-                    <input type="date" class="form-control" id="filter_tanggal_selesai">
-                </div>
-                <div class="form-group col-md-6 text-md-right">
-                    <button type="button" class="btn btn-outline-secondary mr-2" id="resetFilterBtn">
-                        <i class="fas fa-undo mr-1"></i>Reset Filter
-                    </button>
-                    <button type="button" class="btn btn-primary" id="applyFilterBtn">
-                        <i class="fas fa-check mr-1"></i>Terapkan Filter
-                    </button>
+                <div class="collapse show" id="filterInner">
+                    <div class="filter-panel-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-3">
+                                <label for="filter_no_buku" class="small font-weight-bold">No. Buku</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-hashtag"></i></span></div>
+                                    <input type="text" class="form-control" id="filter_no_buku" placeholder="Contoh: TU-1-001">
+                                </div>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="filter_rekening" class="small font-weight-bold">Nomor Rekening</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-code-branch"></i></span></div>
+                                    <input type="text" class="form-control" id="filter_rekening" placeholder="Cari rekening">
+                                </div>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="filter_penerima" class="small font-weight-bold">Nama Penerima</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+                                    <input type="text" class="form-control" id="filter_penerima" placeholder="Cari penerima">
+                                </div>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="filter_pembayaran" class="small font-weight-bold">Untuk Pembayaran</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-align-left"></i></span></div>
+                                    <input type="text" class="form-control" id="filter_pembayaran" placeholder="Cari pembayaran">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row align-items-end">
+                            <div class="form-group col-md-3">
+                                <label for="filter_tanggal_mulai" class="small font-weight-bold">Tanggal Mulai</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar"></i></span></div>
+                                    <input type="date" class="form-control" id="filter_tanggal_mulai">
+                                </div>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="filter_tanggal_selesai" class="small font-weight-bold">Tanggal Selesai</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span></div>
+                                    <input type="date" class="form-control" id="filter_tanggal_selesai">
+                                </div>
+                            </div>
+                            <div class="form-group col-md-6 text-md-right">
+                                <button type="button" class="btn btn-outline-secondary btn-sm mr-2" id="resetFilterBtn">
+                                    <i class="fas fa-undo mr-1"></i>Reset
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm" id="applyFilterBtn">
+                                    <i class="fas fa-check mr-1"></i>Terapkan Filter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="table-responsive">
             <table class="table table-bordered table-hover mb-0" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
-                <thead style="background-color: #f8f9fc;">
+                <thead>
                     <tr>
                         <th width="40px" class="text-center">
                             <input type="checkbox" id="selectAllCheckbox" title="Pilih semua">
@@ -237,7 +426,7 @@
         <div class="modal-content border-left-primary">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="addkuitansiModalLabel">
-                    <i class="fas fa-file-invoice mr-2"></i>Form Kuitansi
+                    <i class="fas fa-file-invoice mr-2"></i>Tambah Kuitansi
                 </h5>
                 <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">×</span>
@@ -245,31 +434,37 @@
             </div>
             <form method="POST" action="{{ route('kuitansi.store') }}">
                 @csrf
-                <div class="modal-body" style="max-height: 600px; overflow-y: auto;">
-                    <div class="alert alert-warning" role="alert">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>Kode Rekening:</strong> <span id="display_kode_rekening" class="badge badge-warning"></span>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-dark" id="btnGantiRekening">
-                                <i class="fas fa-edit mr-1"></i>Ganti
-                            </button>
-                        </div>
+                <div class="modal-body" style="max-height: 72vh; overflow-y: auto; padding: 1.25rem;">
+
+                    {{-- ── IDENTITAS KUITANSI ──────────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-primary text-white"><i class="fas fa-id-card"></i></span>
+                        <span class="font-weight-bold ml-2 text-primary" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Identitas Kuitansi</span>
                     </div>
-                    
+
+                    <div class="alert alert-primary py-2 px-3 mb-3 d-flex align-items-center justify-content-between" role="alert" style="border-radius:10px;">
+                        <div>
+                            <i class="fas fa-clipboard-list mr-1"></i>
+                            <strong>Kode Rekening:</strong>
+                            <span id="display_kode_rekening" class="ml-1 font-weight-bold text-dark"></span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnGantiRekening" style="border-radius:8px;">
+                            <i class="fas fa-exchange-alt mr-1"></i>Ganti
+                        </button>
+                    </div>
                     <input type="hidden" id="nomor_rekening" name="nomor_rekening" required>
                     <input type="hidden" id="selected_id_akun" name="id_akun">
-                    
+
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="tanggal_kuitansi" class="font-weight-bold">Tanggal Kuitansi</label>
+                                <label for="tanggal_kuitansi" class="font-weight-bold small">Tanggal Kuitansi <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="tanggal_kuitansi" name="tanggal_kuitansi" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="periode_lengkap" class="font-weight-bold">Periode <span class="text-danger">*</span></label>
+                                <label for="periode_lengkap" class="font-weight-bold small">Periode <span class="text-danger">*</span></label>
                                 <select class="form-control" id="periode_lengkap" name="periode_lengkap" required>
                                     <option value="">-- Pilih Periode --</option>
                                     @php $periodes = ['TU', 'GU']; @endphp
@@ -281,19 +476,16 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="nomor_urut" class="font-weight-bold">Nomor Kuitansi <span class="text-danger">*</span></label>
+                                <label for="nomor_urut" class="font-weight-bold small">No. Urut Kuitansi <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="nomor_urut" name="nomor_urut" placeholder="001" maxlength="3" required>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="rekanan_id" class="font-weight-bold">Penerima (Rekanan) <span class="text-danger">*</span></label>
+                        <label for="rekanan_id" class="font-weight-bold small">Penerima (Rekanan) <span class="text-danger">*</span></label>
                         <select class="form-control" id="rekanan_id" name="rekanan_id" required>
                             <option value="">-- Pilih Rekanan --</option>
                             @foreach($rekanans as $rekanan)
@@ -304,48 +496,138 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="kode_objek_pajak" class="font-weight-bold">Kode Objek Pajak</label>
-                        <input type="text" class="form-control" id="kode_objek_pajak" name="kode_objek_pajak" list="kodeObjekPajakList" placeholder="Cari kode objek pajak..." autocomplete="off">
-                        <small class="form-text text-muted">Hanya perlu diisi jika belanja ≥ 2.000.000</small>
-                    </div>
-                    <input type="hidden" id="tarif_pajak" name="tarif_pajak" value="0">
+                    <hr class="my-3">
 
-                    <div class="row">
+                    {{-- ── KETERANGAN PEMBAYARAN ───────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-success text-white"><i class="fas fa-align-left"></i></span>
+                        <span class="font-weight-bold ml-2 text-success" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Keterangan Pembayaran</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="untuk_pembayaran" class="font-weight-bold small">Untuk Pembayaran <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="untuk_pembayaran" name="untuk_pembayaran" rows="3" placeholder="Jelaskan tujuan pembayaran, misal: Pembayaran pengadaan ATK bulan Maret..." required></textarea>
+                    </div>
+
+                    <hr class="my-3">
+
+                    {{-- ── RINCIAN ITEM ────────────────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-warning text-white"><i class="fas fa-list-ul"></i></span>
+                        <span class="font-weight-bold ml-2 text-warning" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Rincian Item Barang/Jasa</span>
+                    </div>
+
+                    <div class="table-responsive mb-2">
+                        <table class="table table-sm table-bordered mb-1" id="itemsTable">
+                            <thead style="background:#fff9ed;">
+                                <tr>
+                                    <th>Nama Item</th>
+                                    <th style="width:90px;">Jumlah</th>
+                                    <th style="width:140px;">Harga Satuan (Rp)</th>
+                                    <th class="jasa-col text-center" style="width:64px;" title="Centang jika item ini adalah jasa (berlaku PPH 23)">Jasa?</th>
+                                    <th style="width:46px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsBody"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="addItemRow()" style="border-radius:8px;">
+                        <i class="fas fa-plus mr-1"></i>Tambah Item
+                    </button>
+                    <input type="hidden" id="rincian_item_json" name="rincian_item_json" value="[]">
+
+                    <hr class="my-3">
+
+                    {{-- ── PAJAK ───────────────────────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-danger text-white"><i class="fas fa-receipt"></i></span>
+                        <span class="font-weight-bold ml-2 text-danger" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Pemotongan Pajak (PPH)</span>
+                    </div>
+
+                    <div class="row mb-2">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="dpp_display" class="font-weight-bold">DPP (Dasar Pengenaan Pajak)</label>
-                                <input type="text" class="form-control" id="dpp_display" value="Rp 0" readonly>
+                            <div class="card h-100" style="border-left:4px solid #f6c23e;">
+                                <div class="card-body py-2 px-3">
+                                    <p class="font-weight-bold text-warning mb-1 small"><i class="fas fa-boxes mr-1"></i>PPH 22 — Belanja Barang</p>
+                                    <div class="form-group mb-1">
+                                        <input type="text" class="form-control form-control-sm" id="kode_objek_pajak_22" name="kode_objek_pajak" list="kodeObjekPajakList" placeholder="Cari kode objek pajak PPH 22..." autocomplete="off">
+                                        <small class="text-muted">Berlaku jika total barang &gt; Rp 2.000.000</small>
+                                    </div>
+                                    <input type="hidden" id="tarif_pajak" name="tarif_pajak" value="0">
+                                    <div class="form-group mb-0">
+                                        <label class="small mb-0 font-weight-bold">PPH 22 Dipotong:</label>
+                                        <input type="text" class="form-control form-control-sm" id="pph_22_nominal" value="Rp 0" readonly>
+                                        <small id="pph_22_info" class="text-muted" style="display:none;"></small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="pph_nominal" class="font-weight-bold">PPH yang Dipotong</label>
-                                <input type="text" class="form-control" id="pph_nominal" value="Rp 0" readonly>
-                                <small id="jasa_dpp_info" class="text-muted" style="display:none;"></small>
+                            <div class="card h-100" style="border-left:4px solid #36b9cc;">
+                                <div class="card-body py-2 px-3">
+                                    <p class="font-weight-bold text-info mb-1 small"><i class="fas fa-tools mr-1"></i>PPH 23 — Belanja Jasa</p>
+                                    <div class="form-group mb-1">
+                                        <input type="text" class="form-control form-control-sm" id="kode_objek_pajak_23" name="kode_objek_pajak_23" list="kodeObjekPajakList" placeholder="Cari kode objek pajak PPH 23..." autocomplete="off">
+                                        <small class="text-muted">Berlaku pada item bertanda Jasa &#10003;</small>
+                                    </div>
+                                    <input type="hidden" id="tarif_pajak_23" name="tarif_pajak_23" value="0">
+                                    <div class="form-group mb-0">
+                                        <label class="small mb-0 font-weight-bold">PPH 23 Dipotong:</label>
+                                        <input type="text" class="form-control form-control-sm" id="pph_23_nominal" value="Rp 0" readonly>
+                                        <small id="pph_23_info" class="text-muted" style="display:none;"></small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="ppn_checkbox" class="font-weight-bold">
-                            <input type="checkbox" id="ppn_checkbox" name="ppn_checkbox"> 
-                            Tambahkan PPN 11%
-                        </label>
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small">DPP (Dasar Pengenaan Pajak)</label>
+                                <input type="text" class="form-control form-control-sm" id="dpp_display" value="Rp 0" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small">Total PPH Dipotong</label>
+                                <input type="text" class="form-control form-control-sm" id="pph_nominal" value="Rp 0" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small">PPN 11%</label>
+                                <input type="text" class="form-control form-control-sm" id="ppn_nominal" value="Rp 0" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="custom-control custom-checkbox mb-3">
+                        <input type="checkbox" class="custom-control-input" id="ppn_checkbox" name="ppn_checkbox">
+                        <label class="custom-control-label font-weight-bold" for="ppn_checkbox">Tambahkan PPN 11%</label>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <div class="p-3 rounded d-flex align-items-center justify-content-between" style="background:#e8f4f8;border:2px solid #4e73df;">
+                            <div>
+                                <span class="font-weight-bold text-primary" style="font-size:14px;"><i class="fas fa-calculator mr-1"></i>Total Akhir</span><br>
+                                <small class="text-muted">DPP + PPN − PPH</small>
+                            </div>
+                            <input type="text" id="total_akhir_display" value="Rp 0" readonly
+                                style="border:none;background:transparent;font-size:22px;font-weight:800;color:#4e73df;text-align:right;width:55%;padding:0;box-shadow:none;">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    {{-- ── PENANDATANGAN / STAFF ───────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-info text-white"><i class="fas fa-user-tie"></i></span>
+                        <span class="font-weight-bold ml-2 text-info" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Penandatangan</span>
                     </div>
 
                     <div class="form-group">
-                        <label for="total_akhir_display" class="font-weight-bold">Total Akhir</label>
-                        <input type="text" class="form-control form-control-lg" id="total_akhir_display" value="Rp 0" readonly style="font-weight: bold; background-color: #e8f4f8;">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="untuk_pembayaran" class="font-weight-bold">Untuk Pembayaran <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="untuk_pembayaran" name="untuk_pembayaran" rows="3" placeholder="Jelaskan tujuan pembayaran..." required></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="pptk_1_id" class="font-weight-bold">PPTK <span class="text-danger">*</span></label>
+                        <label for="pptk_1_id" class="font-weight-bold small">PPTK <span class="text-danger">*</span></label>
                         <select class="form-control" id="pptk_1_id" name="pptk_1_id" required>
                             <option value="">-- Pilih PPTK --</option>
                             @foreach($pptks as $pptk)
@@ -354,42 +636,23 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="bendahara_checkbox">
-                            <input type="checkbox" id="bendahara_checkbox" name="bendahara_checkbox"> 
-                            <strong>Tambahkan Nama Bendahara Barang</strong>
-                        </label>
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="bendahara_checkbox" name="bendahara_checkbox">
+                        <label class="custom-control-label font-weight-bold" for="bendahara_checkbox">Sertakan Bendahara Barang</label>
                     </div>
-                    <div id="bendahara_info" class="alert alert-info" style="display:none;">
-                        <strong>Bendahara Barang:</strong> <span id="display_bendahara_nama"></span>
+                    <div id="bendahara_info" class="alert alert-info py-2" style="display:none;">
+                        <i class="fas fa-user mr-1"></i><strong>Bendahara Barang:</strong> <span id="display_bendahara_nama"></span>
                     </div>
                     <input type="hidden" id="nama_bendahara_barang" name="nama_bendahara_barang">
                     <input type="hidden" id="nip_bendahara_barang" name="nip_bendahara_barang">
 
-                    <div class="form-group">
-                        <label class="font-weight-bold">Item Barang</label>
-                        <table class="table table-sm table-bordered" id="itemsTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Nama Item</th>
-                                    <th>Jumlah</th>
-                                    <th>Harga Satuan</th>
-                                    <th class="jasa-col" style="width:70px;">Jasa?</th>
-                                    <th width="50px">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="itemsBody"></tbody>
-                        </table>
-                        <button type="button" class="btn btn-sm btn-secondary" onclick="addItemRow()">
-                            <i class="fas fa-plus mr-1"></i>Tambah Item
-                        </button>
-                    </div>
-                    <input type="hidden" id="rincian_item_json" name="rincian_item_json" value="[]">
                 </div>
                 <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Batal</button>
-                    <button class="btn btn-primary" type="button" onclick="updateAddFormBefore(event)">
-                        <i class="fas fa-save mr-1"></i>Simpan
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal" style="border-radius:8px;">
+                        <i class="fas fa-times mr-1"></i>Batal
+                    </button>
+                    <button class="btn btn-primary" type="button" onclick="updateAddFormBefore(event)" style="border-radius:8px;">
+                        <i class="fas fa-save mr-1"></i>Simpan Kuitansi
                     </button>
                 </div>
             </form>
@@ -456,6 +719,8 @@
                             @endforeach
                         </select>
                     </div>
+
+                    <input type="hidden" id="edit_nomor_rekening" name="nomor_rekening">
 
                     <div class="border rounded p-3 mb-3 bg-light">
                         <p class="font-weight-bold mb-2"><i class="fas fa-receipt mr-1 text-secondary"></i>Pemotongan Pajak (PPH)</p>
@@ -739,28 +1004,44 @@
             Swal.fire({
                 title: 'Memproses...',
                 text: 'Sedang membuat file XML...',
-                icon: 'info',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
 
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ route("kuitansi.exportBupotXmlSelected") }}';
-            
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            form.innerHTML = `
-                <input type="hidden" name="_token" value="${csrfToken}">
-                <input type="hidden" name="kuitansi_ids" value='${JSON.stringify(selectedIds)}'>
-            `;
-            
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
+            const formData = new FormData();
+            formData.append('_token', csrfToken);
+            formData.append('kuitansi_ids', JSON.stringify(selectedIds));
 
-            setTimeout(() => {
-                Swal.fire('Berhasil!', 'File XML telah didownload', 'success');
-            }, 1000);
+            fetch('{{ route("kuitansi.exportBupotXmlSelected") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                const contentType = response.headers.get('Content-Type') || '';
+                if (!response.ok || contentType.includes('text/html')) {
+                    return response.text().then(text => {
+                        // Try to extract flash error from redirected HTML
+                        const match = text.match(/alert-danger[^>]*>\s*([^<]+)/);
+                        throw new Error(match ? match[1].trim() : 'Tidak ada kuitansi yang memenuhi syarat BuPot (DPP ≥ 2.000.000 dan kode objek pajak lengkap).');
+                    });
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'BuPot_PPh_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.xml';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                Swal.fire('Berhasil!', 'File XML berhasil didownload.', 'success');
+            })
+            .catch(err => {
+                Swal.fire('Gagal', err.message, 'error');
+            });
         });
     });
 
@@ -955,6 +1236,7 @@
             $('#edit_tanggal_kuitansi').val(data.tanggal_kuitansi);
             $('#edit_untuk_pembayaran').val(data.untuk_pembayaran);
             $('#edit_pptk_1_id').val(data.pptk_1_id).trigger('change');
+            $('#edit_nomor_rekening').val(data.nomor_rekening);
             
             // Populate PPH 22 kode
             if (data.kode_objek_pajak) {
@@ -996,5 +1278,12 @@
     function formatPeriodeLengkap(type, number) {
         return `${type}-${number}`;
     }
+
+    // Filter panel chevron toggle
+    $('#filterInner').on('show.bs.collapse', function () {
+        $('#filterInnerChevron').removeClass('rotated');
+    }).on('hide.bs.collapse', function () {
+        $('#filterInnerChevron').addClass('rotated');
+    });
     </script>
 @endpush

@@ -3,41 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview Kuitansi - {{ $kuitansi->nama_penerima }}</title>
+    <title>Preview Kuitansi — {{ $kuitansi->nama_penerima }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/kuitansi-preview.css') }}">
 </head>
 <body>
     <!-- Preview Toolbar -->
     <div class="toolbar">
         <div class="toolbar-left">
-            <a href="{{ route('kuitansi.index') }}" title="Kembali">
-                <span class="icon">←</span>
+            <a href="{{ route('kuitansi.index') }}" class="btn-back" title="Kembali ke daftar kuitansi">
+                <i class="fas fa-arrow-left"></i>
+                <span>Kembali</span>
             </a>
-            <span class="toolbar-title">{{ $kuitansi->nama_penerima }}</span>
+            <div class="toolbar-divider"></div>
+            <div class="doc-info">
+                <div class="doc-title">{{ $kuitansi->nama_penerima }}</div>
+                <div class="doc-meta">No. Buku: {{ $kuitansi->no_buku ?? str_pad($kuitansi->nomor_urut,3,'0',STR_PAD_LEFT).' / '.$kuitansi->periode_type.' '.$kuitansi->periode_number }}</div>
+            </div>
         </div>
-        
+
         <div class="toolbar-center">
             <div class="zoom-control">
-                <button onclick="zoomOut()" title="Zoom Out (Ctrl-)">
-                    <span class="icon">−</span>
-                </button>
+                <button onclick="zoomOut()" title="Zoom Out (Ctrl −)"><i class="fas fa-minus"></i></button>
                 <span class="zoom-value" id="zoomValue">100%</span>
-                <button onclick="zoomIn()" title="Zoom In (Ctrl+)">
-                    <span class="icon">+</span>
-                </button>
+                <button onclick="zoomIn()" title="Zoom In (Ctrl +)"><i class="fas fa-plus"></i></button>
             </div>
-            <button onclick="resetZoom()" title="Reset Zoom (Ctrl+0)">
-                <span class="icon">⛶</span>
+            <button class="btn-icon" onclick="resetZoom()" title="Reset Zoom (Ctrl 0)">
+                <i class="fas fa-expand-arrows-alt"></i>
             </button>
         </div>
-        
+
         <div class="toolbar-right">
-            <button onclick="window.print()" class="primary" title="Print">
-                <span class="icon">🖨</span>
+            <button class="btn-print" onclick="window.print()" title="Cetak (Ctrl+P)">
+                <i class="fas fa-print"></i>
+                <span>Cetak</span>
             </button>
         </div>
     </div>
-    
+
+    <!-- Info Strip -->
+    @php
+        use App\Helpers\NumberToWordHelper;
+        $ppnAmount   = (int) ($kuitansi->ppn    ?? 0);
+        $pphAmount   = (int) ($kuitansi->pph    ?? 0);
+        $pph22Amount = (int) ($kuitansi->pph_22 ?? 0);
+        $pph23Amount = (int) ($kuitansi->pph_23 ?? 0);
+        $totalAkhir  = (int) ($kuitansi->total_akhir ?? 0);
+        $terbilang   = NumberToWordHelper::terbilang($totalAkhir);
+    @endphp
+    <div class="info-strip">
+        <div class="info-chip">
+            <i class="fas fa-hashtag"></i>
+            <span>No. Buku:&nbsp;<strong>{{ $kuitansi->no_buku ?? (str_pad($kuitansi->nomor_urut,3,'0',STR_PAD_LEFT).' / '.$kuitansi->periode_type.' '.$kuitansi->periode_number) }}</strong>
+            </span>
+        </div>
+        <div class="info-chip">
+            <i class="fas fa-building"></i>
+            <span>Rekanan:&nbsp;<strong>{{ $kuitansi->nama_penerima }}</strong></span>
+        </div>
+        <div class="info-chip">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Tanggal:&nbsp;<strong>{{ $kuitansi->tanggal_kuitansi ? \Carbon\Carbon::parse($kuitansi->tanggal_kuitansi)->isoFormat('D MMMM Y') : '—' }}</strong></span>
+        </div>
+        <div class="info-chip">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>Total:&nbsp;<strong>Rp {{ number_format($totalAkhir, 0, ',', '.') }}</strong></span>
+        </div>
+        @if($pph22Amount > 0 || $pph23Amount > 0)
+        <div class="info-chip">
+            <i class="fas fa-receipt"></i>
+            <span>PPH:&nbsp;<strong>Rp {{ number_format($pphAmount, 0, ',', '.') }}</strong></span>
+        </div>
+        @endif
+    </div>
+
     <!-- Preview Container -->
     <div class="preview-container">
         <div class="preview-page" id="previewPage">
@@ -73,18 +114,6 @@
 
     <!-- kuitansi Title -->
     <div class="kuitansi-title">KUITANSI</div>
-
-    @php
-        use App\Helpers\NumberToWordHelper;
-        
-        $ppnAmount  = (int) ($kuitansi->ppn    ?? 0);
-        $pphAmount  = (int) ($kuitansi->pph    ?? 0);
-        $pph22Amount = (int) ($kuitansi->pph_22 ?? 0);
-        $pph23Amount = (int) ($kuitansi->pph_23 ?? 0);
-        $totalAkhir = (int) ($kuitansi->total_akhir ?? 0);
-        
-        $terbilang = NumberToWordHelper::terbilang($totalAkhir);
-    @endphp
 
     <div class="content">
         <table class="content-table">
