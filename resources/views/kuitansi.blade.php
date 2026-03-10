@@ -4,55 +4,44 @@
 
 @section('content')
 @push('styles')
-    <style>
-        th, td {
-            vertical-align: middle !important;
-        }
-        .filter-panel {
-            background: #f8f9fc;
-            border: 1px solid #e3e6f0;
-            border-radius: .35rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        .kuitansi-checkbox,
-        #selectAllCheckbox {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-            margin: 0;
-            position: static;
-        }
-        .aksi-buttons .btn {
-            min-width: 32px;
-        }
-    </style>
+<link rel="stylesheet" href="{{ asset('css/dashboard-custom.css') }}">
+<style>
+    th, td { vertical-align: middle !important; }
+    .filter-panel { background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 14px; padding: 1.2rem; margin-bottom: 1.2rem; }
+    .kuitansi-checkbox, #selectAllCheckbox { width: 16px; height: 16px; cursor: pointer; margin: 0; position: static; }
+    .aksi-buttons .btn { min-width: 32px; border-radius: 8px; }
+</style>
 @endpush
 
-<!-- Page Heading -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h1 class="h3 text-gray-800 mb-0">
-            <i class="fas fa-receipt text-primary mr-2"></i>Kuitansi
-        </h1>
+<!-- Hero Banner -->
+<div class="dashboard-hero mb-4">
+    <div class="d-flex align-items-center justify-content-between" style="position:relative;z-index:1;">
+        <div>
+            <div class="hero-badge">
+                <i class="fas fa-circle" style="font-size:7px;color:#4e73df;"></i> Kuitansi
+            </div>
+            <div class="hero-title">Manajemen Kuitansi</div>
+            <p class="hero-sub">Kelola, filter, dan ekspor kuitansi dengan mudah.</p>
+        </div>
+        <div class="hero-icon d-none d-md-flex">
+            <i class="fas fa-receipt"></i>
+        </div>
     </div>
-    <div class="col-md-6 text-right">
-        <button class="btn btn-primary" data-toggle="modal" data-target="#selectRekeningModal">
-            <i class="fas fa-plus mr-2"></i>Tambah Kuitansi
-        </button>
+    <div class="hero-date mt-2">
+        <i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+    </div>
+    <div class="mt-3 text-white" style="font-size:13px;">
+        <i class="fas fa-info-circle mr-1"></i> Total data: <strong>{{ count($kuitansis) }}</strong>
     </div>
 </div>
 
 <!-- DataTable Card -->
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); border: none;">
-        <div class="d-flex align-items-center">
-            <h6 class="m-0 font-weight-bold text-white mr-3">
-                <i class="fas fa-table mr-2"></i>Data Kuitansi
-            </h6>
-            <span class="badge badge-light">{{ count($kuitansis) }} data</span>
-        </div>
-        <button class="btn btn-sm btn-success" id="exportXmlBtn" style="display:none;" title="Export XML dari kuitansi yang dipilih">
+<div class="card recent-card mb-4">
+    <div class="card-header">
+        <div class="header-icon"><i class="fas fa-table"></i></div>
+        <h6>Data Kuitansi</h6>
+        <span class="badge badge-light ml-2">{{ count($kuitansis) }} data</span>
+        <button class="btn btn-sm btn-success ml-auto" id="exportXmlBtn" style="display:none;" title="Export XML dari kuitansi yang dipilih">
             <i class="fas fa-download mr-1"></i>Export XML (<span id="selectedCount">0</span>)
         </button>
     </div>
@@ -102,7 +91,7 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table table-bordered table-hover" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
+            <table class="table table-bordered table-hover mb-0" id="dataTable" data-custom-dt="1" style="font-size: 0.9rem;">
                 <thead style="background-color: #f8f9fc;">
                     <tr>
                         <th width="40px" class="text-center">
@@ -131,7 +120,7 @@
                         </td>
                         <td>{{ $loop->iteration }}</td>
                         <td data-search="{{ $kuitansi->no_buku }}">
-                            <span class="badge badge-primary">{{ $kuitansi->no_buku }}</span>
+                            <span class="no-buku-badge">{{ $kuitansi->no_buku }}</span>
                         </td>
                         <td data-search="{{ $kuitansi->nomor_rekening }}">
                             <small class="text-muted">{{ $kuitansi->nomor_rekening }}</small>
@@ -140,7 +129,7 @@
                             <small>{{ \Illuminate\Support\Str::limit($kuitansi->untuk_pembayaran, 80) }}</small>
                         </td>
                         <td data-search="{{ (int)($kuitansi->total_akhir ?? 0) }}">
-                            <strong class="text-success">Rp {{ number_format((int)($kuitansi->total_akhir ?? 0), 0, ',', '.') }}</strong>
+                            <span class="badge-nominal">Rp {{ number_format((int)($kuitansi->total_akhir ?? 0), 0, ',', '.') }}</span>
                         </td>
                         <td data-search="{{ $kuitansi->nama_penerima }}">{{ $kuitansi->nama_penerima }}</td>
                         <td data-search="{{ $kuitansi->tanggal_kuitansi }} {{ $kuitansi->tanggal_kuitansi ? \Carbon\Carbon::parse($kuitansi->tanggal_kuitansi)->format('d/m/Y') : '' }}" data-raw-date="{{ $kuitansi->tanggal_kuitansi }}">
