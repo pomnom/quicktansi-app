@@ -588,24 +588,38 @@
                 <h5 class="modal-title" id="editkuitansiModalLabel">
                     <i class="fas fa-edit mr-2"></i>Edit Kuitansi
                 </h5>
-                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Tutup">
                     <span aria-hidden="true">×</span>
                 </button>
             </div>
             <form id="editForm" method="POST">
                 @csrf
                 @method('PUT')
-                <div class="modal-body" style="max-height: 600px; overflow-y: auto;">
+                <div class="modal-body" style="max-height: 72vh; overflow-y: auto; padding: 1.25rem;">
+
+                    {{-- ── IDENTITAS KUITANSI ──────────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-primary text-white"><i class="fas fa-id-card"></i></span>
+                        <span class="font-weight-bold ml-2 text-primary" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Identitas Kuitansi</span>
+                    </div>
+
+                    <div class="alert alert-primary py-2 px-3 mb-3 d-flex align-items-center" role="alert" style="border-radius:10px;">
+                        <i class="fas fa-clipboard-list mr-2"></i>
+                        <strong>Kode Rekening:</strong>
+                        <span id="edit_display_kode_rekening" class="ml-2 font-weight-bold text-dark"></span>
+                    </div>
+                    <input type="hidden" id="edit_nomor_rekening" name="nomor_rekening">
+
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_tanggal_kuitansi" class="font-weight-bold">Tanggal Kuitansi</label>
+                                <label for="edit_tanggal_kuitansi" class="font-weight-bold small">Tanggal Kuitansi <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="edit_tanggal_kuitansi" name="tanggal_kuitansi" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_periode_lengkap" class="font-weight-bold">Periode <span class="text-danger">*</span></label>
+                                <label for="edit_periode_lengkap" class="font-weight-bold small">Periode <span class="text-danger">*</span></label>
                                 <select class="form-control" id="edit_periode_lengkap" name="periode_lengkap" required>
                                     <option value="">-- Pilih Periode --</option>
                                     @php $periodes = ['TU', 'GU']; @endphp
@@ -617,19 +631,16 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_nomor_urut" class="font-weight-bold">Nomor Kuitansi <span class="text-danger">*</span></label>
+                                <label for="edit_nomor_urut" class="font-weight-bold small">No. Urut Kuitansi <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="edit_nomor_urut" name="nomor_urut" placeholder="001" maxlength="3" required>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="edit_rekanan_id" class="font-weight-bold">Penerima (Rekanan) <span class="text-danger">*</span></label>
+                        <label for="edit_rekanan_id" class="font-weight-bold small">Penerima (Rekanan) <span class="text-danger">*</span></label>
                         <select class="form-control" id="edit_rekanan_id" name="rekanan_id" required>
                             <option value="">-- Pilih Rekanan --</option>
                             @foreach($rekanans as $rekanan)
@@ -640,82 +651,138 @@
                         </select>
                     </div>
 
-                    <input type="hidden" id="edit_nomor_rekening" name="nomor_rekening">
+                    <hr class="my-3">
 
-                    <div class="border rounded p-3 mb-3 bg-light">
-                        <p class="font-weight-bold mb-2"><i class="fas fa-receipt mr-1 text-secondary"></i>Pemotongan Pajak (PPH)</p>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card mb-2" style="border-left: 4px solid #f6c23e;">
-                                    <div class="card-body py-2 px-3">
-                                        <p class="font-weight-bold text-warning mb-1 small"><i class="fas fa-boxes mr-1"></i>PPH 22 — Belanja Barang</p>
-                                        <div class="form-group mb-1">
-                                            <input type="text" class="form-control form-control-sm" id="edit_kode_objek_pajak_22" name="kode_objek_pajak" list="kodeObjekPajakList" placeholder="Kode objek pajak PPH 22..." autocomplete="off">
-                                            <small class="text-muted">Berlaku jika total barang &gt; Rp 2.000.000</small>
-                                        </div>
-                                        <input type="hidden" id="edit_tarif_pajak" name="tarif_pajak" value="0">
-                                        <div class="form-group mb-0">
-                                            <label class="small mb-0 font-weight-bold">PPH 22 Dipotong:</label>
-                                            <input type="text" class="form-control form-control-sm" id="edit_pph_22_nominal" value="Rp 0" readonly>
-                                            <small id="edit_pph_22_info" class="text-muted" style="display:none;"></small>
-                                        </div>
+                    {{-- ── KETERANGAN PEMBAYARAN ───────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-success text-white"><i class="fas fa-align-left"></i></span>
+                        <span class="font-weight-bold ml-2 text-success" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Keterangan Pembayaran</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit_untuk_pembayaran" class="font-weight-bold small">Untuk Pembayaran <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="edit_untuk_pembayaran" name="untuk_pembayaran" rows="3" placeholder="Jelaskan tujuan pembayaran..." required></textarea>
+                    </div>
+
+                    <hr class="my-3">
+
+                    {{-- ── RINCIAN ITEM ────────────────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-warning text-white"><i class="fas fa-list-ul"></i></span>
+                        <span class="font-weight-bold ml-2 text-warning" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Rincian Item Barang/Jasa</span>
+                    </div>
+
+                    <div class="table-responsive mb-2">
+                        <table class="table table-sm table-bordered mb-1" id="editItemsTable">
+                            <thead style="background:#fff9ed;">
+                                <tr>
+                                    <th>Nama Item</th>
+                                    <th style="width:90px;">Jumlah</th>
+                                    <th style="width:140px;">Harga Satuan (Rp)</th>
+                                    <th class="jasa-col text-center" style="width:64px;" title="Centang jika item ini adalah jasa (berlaku PPH 23)">Jasa?</th>
+                                    <th style="width:46px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="editItemsBody"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="addEditItemRow()" style="border-radius:8px;">
+                        <i class="fas fa-plus mr-1"></i>Tambah Item
+                    </button>
+                    <input type="hidden" id="edit_rincian_item_json" name="rincian_item_json" value="[]">
+
+                    <hr class="my-3">
+
+                    {{-- ── PAJAK ───────────────────────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-danger text-white"><i class="fas fa-receipt"></i></span>
+                        <span class="font-weight-bold ml-2 text-danger" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Pemotongan Pajak (PPH)</span>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <div class="card h-100" style="border-left:4px solid #f6c23e;">
+                                <div class="card-body py-2 px-3">
+                                    <p class="font-weight-bold text-warning mb-1 small"><i class="fas fa-boxes mr-1"></i>PPH 22 — Belanja Barang</p>
+                                    <div class="form-group mb-1">
+                                        <input type="text" class="form-control form-control-sm" id="edit_kode_objek_pajak_22" name="kode_objek_pajak" list="kodeObjekPajakList" placeholder="Kode objek pajak PPH 22..." autocomplete="off">
+                                        <small class="text-muted">Berlaku jika total barang &gt; Rp 2.000.000</small>
+                                    </div>
+                                    <input type="hidden" id="edit_tarif_pajak" name="tarif_pajak" value="0">
+                                    <div class="form-group mb-0">
+                                        <label class="small mb-0 font-weight-bold">PPH 22 Dipotong:</label>
+                                        <input type="text" class="form-control form-control-sm" id="edit_pph_22_nominal" value="Rp 0" readonly>
+                                        <small id="edit_pph_22_info" class="text-muted" style="display:none;"></small>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="card mb-2" style="border-left: 4px solid #36b9cc;">
-                                    <div class="card-body py-2 px-3">
-                                        <p class="font-weight-bold text-info mb-1 small"><i class="fas fa-tools mr-1"></i>PPH 23 — Belanja Jasa</p>
-                                        <div class="form-group mb-1">
-                                            <input type="text" class="form-control form-control-sm" id="edit_kode_objek_pajak_23" name="kode_objek_pajak_23" list="kodeObjekPajakList" placeholder="Kode objek pajak PPH 23..." autocomplete="off">
-                                            <small class="text-muted">Berlaku pada item bertanda Jasa &#10003;</small>
-                                        </div>
-                                        <input type="hidden" id="edit_tarif_pajak_23" name="tarif_pajak_23" value="0">
-                                        <div class="form-group mb-0">
-                                            <label class="small mb-0 font-weight-bold">PPH 23 Dipotong:</label>
-                                            <input type="text" class="form-control form-control-sm" id="edit_pph_23_nominal" value="Rp 0" readonly>
-                                            <small id="edit_pph_23_info" class="text-muted" style="display:none;"></small>
-                                        </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100" style="border-left:4px solid #36b9cc;">
+                                <div class="card-body py-2 px-3">
+                                    <p class="font-weight-bold text-info mb-1 small"><i class="fas fa-tools mr-1"></i>PPH 23 — Belanja Jasa</p>
+                                    <div class="form-group mb-1">
+                                        <input type="text" class="form-control form-control-sm" id="edit_kode_objek_pajak_23" name="kode_objek_pajak_23" list="kodeObjekPajakList" placeholder="Kode objek pajak PPH 23..." autocomplete="off">
+                                        <small class="text-muted">Berlaku pada item bertanda Jasa &#10003;</small>
+                                    </div>
+                                    <input type="hidden" id="edit_tarif_pajak_23" name="tarif_pajak_23" value="0">
+                                    <div class="form-group mb-0">
+                                        <label class="small mb-0 font-weight-bold">PPH 23 Dipotong:</label>
+                                        <input type="text" class="form-control form-control-sm" id="edit_pph_23_nominal" value="Rp 0" readonly>
+                                        <small id="edit_pph_23_info" class="text-muted" style="display:none;"></small>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_dpp_display" class="font-weight-bold">DPP</label>
-                                <input type="text" class="form-control" id="edit_dpp_display" value="Rp 0" readonly>
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small">DPP (Dasar Pengenaan Pajak)</label>
+                                <input type="text" class="form-control form-control-sm" id="edit_dpp_display" value="Rp 0" readonly>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_pph_nominal" class="font-weight-bold">Total PPH Dipotong</label>
-                                <input type="text" class="form-control" id="edit_pph_nominal" value="Rp 0" readonly>
+                        <div class="col-md-4">
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small">Total PPH Dipotong</label>
+                                <input type="text" class="form-control form-control-sm" id="edit_pph_nominal" value="Rp 0" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold small">PPN 11%</label>
+                                <input type="text" class="form-control form-control-sm" id="edit_ppn_nominal" value="Rp 0" readonly>
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="edit_ppn_checkbox">
-                            <input type="checkbox" id="edit_ppn_checkbox" name="edit_ppn_checkbox"> 
-                            <strong>Tambahkan PPN 11%</strong>
-                        </label>
+                    <div class="custom-control custom-checkbox mb-3">
+                        <input type="checkbox" class="custom-control-input" id="edit_ppn_checkbox" name="edit_ppn_checkbox">
+                        <label class="custom-control-label font-weight-bold" for="edit_ppn_checkbox">Tambahkan PPN 11%</label>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <div class="p-3 rounded d-flex align-items-center justify-content-between" style="background:#e8f4f8;border:2px solid #4e73df;">
+                            <div>
+                                <span class="font-weight-bold text-primary" style="font-size:14px;"><i class="fas fa-calculator mr-1"></i>Total Akhir</span><br>
+                                <small class="text-muted">DPP + PPN − PPH</small>
+                            </div>
+                            <input type="text" id="edit_total_akhir_display" value="Rp 0" readonly
+                                style="border:none;background:transparent;font-size:22px;font-weight:800;color:#4e73df;text-align:right;width:55%;padding:0;box-shadow:none;">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    {{-- ── PENANDATANGAN / STAFF ───────────────────────────── --}}
+                    <div class="form-section-label d-flex align-items-center mb-3">
+                        <span class="form-section-icon bg-info text-white"><i class="fas fa-user-tie"></i></span>
+                        <span class="font-weight-bold ml-2 text-info" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Penandatangan</span>
                     </div>
 
                     <div class="form-group">
-                        <label for="edit_total_akhir_display" class="font-weight-bold">Total Akhir</label>
-                        <input type="text" class="form-control form-control-lg" id="edit_total_akhir_display" value="Rp 0" readonly style="font-weight: bold; background-color: #e8f4f8;">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="edit_untuk_pembayaran" class="font-weight-bold">Untuk Pembayaran <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="edit_untuk_pembayaran" name="untuk_pembayaran" rows="3" required></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="edit_pptk_1_id" class="font-weight-bold">PPTK <span class="text-danger">*</span></label>
+                        <label for="edit_pptk_1_id" class="font-weight-bold small">PPTK <span class="text-danger">*</span></label>
                         <select class="form-control" id="edit_pptk_1_id" name="pptk_1_id" required>
                             <option value="">-- Pilih PPTK --</option>
                             @foreach($pptks as $pptk)
@@ -724,42 +791,23 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="edit_bendahara_checkbox">
-                            <input type="checkbox" id="edit_bendahara_checkbox" name="edit_bendahara_checkbox"> 
-                            <strong>Tambahkan Nama Bendahara Barang</strong>
-                        </label>
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="edit_bendahara_checkbox" name="edit_bendahara_checkbox">
+                        <label class="custom-control-label font-weight-bold" for="edit_bendahara_checkbox">Sertakan Bendahara Barang</label>
                     </div>
-                    <div id="edit_bendahara_info" class="alert alert-info" style="display:none;">
-                        <strong>Bendahara Barang:</strong> <span id="edit_display_bendahara_nama"></span>
+                    <div id="edit_bendahara_info" class="alert alert-info py-2" style="display:none;">
+                        <i class="fas fa-user mr-1"></i><strong>Bendahara Barang:</strong> <span id="edit_display_bendahara_nama"></span>
                     </div>
                     <input type="hidden" id="edit_nama_bendahara_barang" name="nama_bendahara_barang">
                     <input type="hidden" id="edit_nip_bendahara_barang" name="nip_bendahara_barang">
 
-                    <div class="form-group">
-                        <label class="font-weight-bold">Item Barang</label>
-                        <table class="table table-sm table-bordered" id="editItemsTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Nama Item</th>
-                                    <th>Jumlah</th>
-                                    <th>Harga Satuan</th>
-                                    <th class="jasa-col" style="width:70px;">Jasa?</th>
-                                    <th width="50px">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="editItemsBody"></tbody>
-                        </table>
-                        <button type="button" class="btn btn-sm btn-secondary" onclick="addEditItemRow()">
-                            <i class="fas fa-plus mr-1"></i>Tambah Item
-                        </button>
-                    </div>
-                    <input type="hidden" id="edit_rincian_item_json" name="rincian_item_json" value="[]">
                 </div>
                 <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Batal</button>
-                    <button class="btn btn-info" type="button" onclick="updateEditFormBefore(event)">
-                        <i class="fas fa-save mr-1"></i>Update
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal" style="border-radius:8px;">
+                        <i class="fas fa-times mr-1"></i>Batal
+                    </button>
+                    <button class="btn btn-info" type="button" onclick="updateEditFormBefore(event)" style="border-radius:8px;">
+                        <i class="fas fa-save mr-1"></i>Simpan Perubahan
                     </button>
                 </div>
             </form>
@@ -1157,6 +1205,7 @@
             $('#edit_untuk_pembayaran').val(data.untuk_pembayaran);
             $('#edit_pptk_1_id').val(data.pptk_1_id).trigger('change');
             $('#edit_nomor_rekening').val(data.nomor_rekening);
+            $('#edit_display_kode_rekening').text(data.nomor_rekening || '-');
             
             // Populate PPH 22 kode
             if (data.kode_objek_pajak) {

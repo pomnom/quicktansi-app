@@ -87,6 +87,21 @@
     @endif
 
     <!-- Divider -->
+    <hr class="sidebar-divider">
+
+    <!-- Heading - AKUN -->
+    <div class="sidebar-heading">
+        AKUN
+    </div>
+
+    <!-- Nav Item - Profil -->
+    <li class="nav-item {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('profile.show') }}">
+            <i class="fas fa-fw fa-user-circle"></i>
+            <span>Profil Saya</span></a>
+    </li>
+
+    <!-- Divider -->
     <hr class="sidebar-divider d-none d-md-block">
 
     <!-- Sidebar Toggler (Sidebar) -->

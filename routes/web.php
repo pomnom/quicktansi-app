@@ -9,6 +9,7 @@ use App\Http\Controllers\RekananController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\InstansiController;
 use App\Http\Controllers\MasterRekeningController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +51,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('staff', StaffController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
     
     Route::resource('instansi', InstansiController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
+
+    Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
 
     Route::get('master-rekening', [MasterRekeningController::class, 'index'])->name('master-rekening.index');
 
