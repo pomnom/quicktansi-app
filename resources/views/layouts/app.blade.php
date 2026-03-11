@@ -28,6 +28,7 @@
 
     <!-- Custom CSS for App -->
     <link href="{{ asset('css/kuitansi.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/dashboard-custom.css') }}" rel="stylesheet">
 
     <!-- Preview CSS (only load on preview pages) -->
     @if(request()->routeIs('kuitansi.preview'))
@@ -82,17 +83,17 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <h5 class="modal-title" id="exampleModalLabel">Mau Keluar?</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Tutup">
                         <span aria-hidden="true">×</span>
                     </button>
                 </div>
-                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-body">Klik "Keluar" di bawah jika Anda siap mengakhiri sesi ini.</div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Batal</button>
                     <form action="{{ route('logout') }}" method="POST" style="display:inline;">
                         @csrf
-                        <button type="submit" class="btn btn-primary">Logout</button>
+                        <button type="submit" class="btn btn-primary">Keluar</button>
                     </form>
                 </div>
             </div>
@@ -109,43 +110,6 @@
         </div>
     </div>
     
-    <style>
-        .dark-mode-switch {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 15px;
-            border-radius: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-        
-        body.dark-mode .dark-mode-switch {
-            background: rgba(52, 58, 64, 0.9);
-        }
-        
-        .dark-mode-switch .custom-control-label {
-            cursor: pointer;
-            font-size: 16px;
-            padding-left: 10px;
-            margin-bottom: 0;
-        }
-        
-        .dark-mode-switch .custom-control-label i {
-            transition: all 0.3s ease;
-        }
-        
-        .dark-mode-switch .custom-control-input:checked ~ .custom-control-label i {
-            color: #ffc107;
-        }
-        
-        .custom-switch .custom-control-label::before {
-            background-color: #6c757d;
-        }
-        
-        .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
-            background-color: #4e73df;
-        }
-    </style>
-
     <!-- Bootstrap core JavaScript-->
     <script src="{{ asset('admin/vendor/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('admin/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
@@ -217,7 +181,7 @@
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',
-                text: '{{ session('success') }}',
+                text: @json(session('success')),
                 timer: 3000,
                 showConfirmButton: false
             });
@@ -227,7 +191,7 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Error!',
-                text: '{{ $errors->first() }}'
+                text: @json($errors->first())
             });
         @endif
     </script>

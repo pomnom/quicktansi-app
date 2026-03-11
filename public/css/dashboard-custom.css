@@ -273,3 +273,368 @@
     padding: 3px 8px;
     border-radius: 6px;
 }
+
+/* ==============================================
+   GLOBAL TABLE STYLES
+   ============================================== */
+th,
+td {
+    vertical-align: middle !important;
+}
+
+.dt-table thead th,
+#dataTable thead th {
+    background: #f0f2fc;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5a5c69;
+    border-bottom: 2px solid #d1d3e2;
+    white-space: nowrap;
+}
+.dt-table tbody tr:hover td,
+#dataTable tbody tr:hover td {
+    background: #f8f9ff;
+}
+.dt-table tbody td,
+#dataTable tbody td {
+    font-size: 13px;
+    color: #5a5c69;
+}
+
+/* ==============================================
+   HERO STATS STRIP
+   ============================================== */
+.hero-stats-strip {
+    display: flex;
+    gap: 24px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+.hero-stats-strip .hs-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
+    padding: 8px 16px;
+}
+.hero-stats-strip .hs-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.7);
+}
+.hero-stats-strip .hs-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+}
+.hero-stats-strip .hs-icon {
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* ==============================================
+   PAGE ACTION BARS
+   ============================================== */
+.page-action-bar,
+.user-action-bar,
+.instansi-action-bar,
+.staff-action-bar,
+.rekanan-action-bar,
+.kuitansi-action-bar,
+.section-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+.page-action-bar .btn,
+.user-action-bar .btn,
+.instansi-action-bar .btn,
+.staff-action-bar .btn,
+.rekanan-action-bar .btn,
+.kuitansi-action-bar .btn,
+.section-action-bar .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 18px;
+}
+
+/* ==============================================
+   BADGE & TEXT UTILITIES
+   ============================================== */
+/* Monospace text */
+.nip-text,
+.npwp-text {
+    font-family: monospace;
+    font-size: 12px;
+    color: #5a5c69;
+    letter-spacing: 0.4px;
+}
+
+/* Instansi page — website link */
+.website-badge {
+    background: rgba(78, 115, 223, 0.1);
+    color: #4e73df;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+.website-badge:hover {
+    background: rgba(78, 115, 223, 0.2);
+    color: #4e73df;
+    text-decoration: none;
+}
+
+/* Master rekening — kode & blokir */
+.kode-badge {
+    font-family: monospace;
+    font-size: 12px;
+    background: #f0f2fc;
+    color: #4e73df;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
+.blokir-badge-yes {
+    background: rgba(231, 74, 59, 0.12);
+    color: #b93025;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+}
+.blokir-badge-no {
+    background: rgba(28, 200, 138, 0.12);
+    color: #0f7a52;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+}
+
+/* Rekanan — bank badge */
+.bank-badge {
+    background: rgba(78, 115, 223, 0.1);
+    color: #4e73df;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+/* Staff — golongan & status badges */
+.golongan-badge {
+    background: rgba(246, 194, 62, 0.15);
+    color: #a07800;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+.status-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+.status-pa {
+    background: rgba(78, 115, 223, 0.12);
+    color: #3355bb;
+}
+.status-ppk {
+    background: rgba(28, 200, 138, 0.12);
+    color: #0f7a52;
+}
+.status-pptk {
+    background: rgba(54, 185, 204, 0.15);
+    color: #1a7987;
+}
+.status-bpng {
+    background: rgba(246, 194, 62, 0.18);
+    color: #a07800;
+}
+.status-bbrg {
+    background: rgba(231, 74, 59, 0.12);
+    color: #b93025;
+}
+.status-none {
+    background: #f0f2f5;
+    color: #adb5bd;
+}
+
+/* User page — role & identity badges */
+.role-badge-super {
+    background: rgba(231, 74, 59, 0.12);
+    color: #b93025;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+}
+.role-badge-user {
+    background: rgba(28, 200, 138, 0.12);
+    color: #0f7a52;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+}
+.me-badge {
+    background: rgba(78, 115, 223, 0.12);
+    color: #3355bb;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+}
+.instansi-text {
+    font-size: 12px;
+    color: #858796;
+}
+
+/* ==============================================
+   MASTER REKENING NAVIGATION
+   ============================================== */
+.mr-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.mr-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+    border: 2px solid transparent;
+}
+.mr-nav a.kegiatan {
+    background: rgba(78, 115, 223, 0.1);
+    color: #4e73df;
+    border-color: rgba(78, 115, 223, 0.25);
+}
+.mr-nav a.sub {
+    background: rgba(28, 200, 138, 0.1);
+    color: #13855c;
+    border-color: rgba(28, 200, 138, 0.25);
+}
+.mr-nav a.rekening {
+    background: rgba(246, 194, 62, 0.1);
+    color: #a07800;
+    border-color: rgba(246, 194, 62, 0.3);
+}
+.mr-nav a:hover {
+    filter: brightness(0.92);
+}
+
+/* ==============================================
+   KUITANSI PAGE
+   ============================================== */
+.kuitansi-checkbox,
+#selectAllCheckbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+    position: static;
+}
+.aksi-buttons .btn {
+    min-width: 32px;
+    border-radius: 8px;
+}
+
+.filter-panel-wrap {
+    background: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    border-radius: 14px;
+    margin-bottom: 1.2rem;
+    overflow: hidden;
+}
+.filter-panel-header {
+    padding: 0.9rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+.filter-panel-header:hover {
+    background: #eef0f8;
+}
+.filter-panel-body {
+    padding: 0 1.2rem 1.2rem;
+}
+.filter-toggle-icon {
+    transition: transform 0.25s;
+}
+.filter-toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.form-section-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+/* ── Dark Mode Switch ─────────────────────────────────────────────────────── */
+.dark-mode-switch {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 15px;
+    border-radius: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .dark-mode-switch {
+    background: rgba(52, 58, 64, 0.9);
+}
+
+.dark-mode-switch .custom-control-label {
+    cursor: pointer;
+    font-size: 16px;
+    padding-left: 10px;
+    margin-bottom: 0;
+}
+
+.dark-mode-switch .custom-control-label i {
+    transition: all 0.3s ease;
+}
+
+.dark-mode-switch .custom-control-input:checked ~ .custom-control-label i {
+    color: #ffc107;
+}
+
+.custom-switch .custom-control-label::before {
+    background-color: #6c757d;
+}
+
+.custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #4e73df;
+}

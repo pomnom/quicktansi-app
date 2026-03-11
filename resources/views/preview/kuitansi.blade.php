@@ -13,7 +13,7 @@
     <!-- Preview Toolbar -->
     <div class="toolbar">
         <div class="toolbar-left">
-            <a href="{{ route('kuitansi.index') }}" class="btn-back" title="Kembali ke daftar kuitansi">
+            <a href="#" onclick="window.close(); return false;" class="btn-back" title="Tutup tab ini">
                 <i class="fas fa-arrow-left"></i>
                 <span>Kembali</span>
             </a>
@@ -83,33 +83,33 @@
     <div class="preview-container">
         <div class="preview-page" id="previewPage">
             <div class="document-content">
-    <!-- Top Left Info -->
-    <div class="top-left-info">UNTUK PEMERINTAH</div>
-    
-    <!-- Top Right Info -->
-    <div class="top-right-info">
-        <table class="info-table">
-            <tr>
-                <td class="label">No. Rekening</td>
-                <td class="colon">:</td>
-                <td class="value">{{ $kuitansi->nomor_rekening }}</td>
-            </tr>
-            <tr>
-                <td class="label">Tanggal Dibukukan</td>
-                <td class="colon">:</td>
-                <td class="value"></td>
-            </tr>
-            <tr>
-                <td class="label">No. Buku</td>
-                <td class="colon">:</td>
-                <td class="value">{{ str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) }} / {{ $kuitansi->periode_type }} {{ $kuitansi->periode_number }}</td>
-            </tr>
-            <tr>
-                <td class="label">Paraf</td>
-                <td class="colon">:</td>
-                <td class="value">&nbsp;</td>
-            </tr>
-        </table>
+    <!-- Document Header: left stamp + right info table -->
+    <div class="doc-header">
+        <div class="doc-header-left">UNTUK PEMERINTAH</div>
+        <div class="doc-header-right">
+            <table class="info-table">
+                <tr>
+                    <td class="label">No. Rekening</td>
+                    <td class="colon">:</td>
+                    <td class="value">{{ $kuitansi->nomor_rekening }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Tanggal Dibukukan</td>
+                    <td class="colon">:</td>
+                    <td class="value"></td>
+                </tr>
+                <tr>
+                    <td class="label">No. Buku</td>
+                    <td class="colon">:</td>
+                    <td class="value">{{ str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) }} / {{ $kuitansi->periode_type }} {{ $kuitansi->periode_number }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Paraf</td>
+                    <td class="colon">:</td>
+                    <td class="value">&nbsp;</td>
+                </tr>
+            </table>
+        </div>
     </div>
 
     <!-- kuitansi Title -->

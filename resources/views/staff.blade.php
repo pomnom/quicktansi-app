@@ -2,69 +2,6 @@
 
 @section('title', 'Staff')
 
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/dashboard-custom.css') }}">
-<style>
-    th, td { vertical-align: middle !important; }
-    #dataTable thead th {
-        background: #f0f2fc;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #5a5c69;
-        border-bottom: 2px solid #d1d3e2;
-        white-space: nowrap;
-    }
-    #dataTable tbody tr:hover td { background: #f8f9ff; }
-    #dataTable tbody td { font-size: 13px; color: #5a5c69; }
-    .staff-action-bar {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-    }
-    .staff-action-bar .btn { border-radius: 10px; font-weight: 600; font-size: 13px; padding: 8px 18px; }
-    .nip-text { font-family: monospace; font-size: 12px; color: #5a5c69; letter-spacing: 0.4px; }
-    .golongan-badge {
-        background: rgba(246,194,62,0.15);
-        color: #a07800;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 3px 10px;
-        border-radius: 6px;
-        white-space: nowrap;
-    }
-    /* Status badge colours */
-    .status-badge {
-        font-size: 11px;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 6px;
-        white-space: nowrap;
-    }
-    .status-pa   { background: rgba(78,115,223,0.12); color: #3355bb; }
-    .status-ppk  { background: rgba(28,200,138,0.12); color: #0f7a52; }
-    .status-pptk { background: rgba(54,185,204,0.15); color: #1a7987; }
-    .status-bpng { background: rgba(246,194,62,0.18); color: #a07800; }
-    .status-bbrg { background: rgba(231,74,59,0.12);  color: #b93025; }
-    .status-none { background: #f0f2f5; color: #adb5bd; }
-
-    .hero-stats-strip {
-        display: flex; gap: 24px; margin-top: 18px; flex-wrap: wrap;
-    }
-    .hero-stats-strip .hs-item {
-        display: flex; align-items: center; gap: 8px;
-        background: rgba(255,255,255,0.14);
-        border: 1px solid rgba(255,255,255,0.22);
-        border-radius: 10px; padding: 8px 16px;
-    }
-    .hero-stats-strip .hs-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.7); }
-    .hero-stats-strip .hs-value { font-size: 18px; font-weight: 800; color: #fff; line-height: 1.1; }
-    .hero-stats-strip .hs-icon  { font-size: 22px; color: rgba(255,255,255,0.35); }
-</style>
-@endpush
 
 @section('content')
 
