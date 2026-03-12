@@ -21,6 +21,7 @@ return new class extends Migration
         Schema::table('kode_rekening', function (Blueprint $table) {
             $table->string('instansi', 100)->after('id')->nullable();
             $table->index('instansi');
+            $table->unique(['instansi', 'id_sub_giat', 'id_akun'], 'kode_rekening_instansi_sub_giat_akun_unique');
         });
     }
 
@@ -37,6 +38,7 @@ return new class extends Migration
         });
 
         Schema::table('kode_rekening', function (Blueprint $table) {
+            $table->dropUnique('kode_rekening_instansi_sub_giat_akun_unique');
             $table->dropIndex(['instansi']);
             $table->dropColumn('instansi');
         });

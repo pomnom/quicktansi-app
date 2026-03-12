@@ -34,22 +34,11 @@ class MasterRekeningController extends Controller
         $instansi = $user->instansi;
 
         $validated = $request->validate([
-            'id_giat' => [
-                'required',
-                'integer',
-                function ($attribute, $value, $fail) use ($instansi) {
-                    $exists = Kegiatan::where('id_giat', $value)
-                        ->where('instansi', $instansi)
-                        ->exists();
-                    if ($exists) {
-                        $fail('ID Giat sudah digunakan untuk instansi ini.');
-                    }
-                },
-            ],
             'kode_giat' => 'required|string|max:50',
             'nama_giat' => 'required|string|max:255',
         ]);
 
+        $validated['id_giat'] = (Kegiatan::where('instansi', $instansi)->max('id_giat') ?? 0) + 1;
         $validated['instansi'] = $instansi;
 
         Kegiatan::create($validated);
@@ -68,19 +57,6 @@ class MasterRekeningController extends Controller
         }
 
         $validated = $request->validate([
-            'id_giat' => [
-                'required',
-                'integer',
-                function ($attribute, $value, $fail) use ($instansi, $kegiatan) {
-                    $exists = Kegiatan::where('id_giat', $value)
-                        ->where('instansi', $instansi)
-                        ->where('id', '!=', $kegiatan->id)
-                        ->exists();
-                    if ($exists) {
-                        $fail('ID Giat sudah digunakan untuk instansi ini.');
-                    }
-                },
-            ],
             'kode_giat' => 'required|string|max:50',
             'nama_giat' => 'required|string|max:255',
         ]);
@@ -133,22 +109,11 @@ class MasterRekeningController extends Controller
                     }
                 },
             ],
-            'id_sub_giat' => [
-                'required',
-                'integer',
-                function ($attribute, $value, $fail) use ($instansi) {
-                    $exists = SubKegiatan::where('id_sub_giat', $value)
-                        ->where('instansi', $instansi)
-                        ->exists();
-                    if ($exists) {
-                        $fail('ID Sub Giat sudah digunakan untuk instansi ini.');
-                    }
-                },
-            ],
             'kode_sub_giat' => 'required|string|max:50',
             'nama_sub_giat' => 'required|string|max:255',
         ]);
 
+        $validated['id_sub_giat'] = (SubKegiatan::where('instansi', $instansi)->max('id_sub_giat') ?? 0) + 1;
         $validated['instansi'] = $instansi;
 
         SubKegiatan::create($validated);
@@ -176,19 +141,6 @@ class MasterRekeningController extends Controller
                         ->exists();
                     if (!$exists) {
                         $fail('Kegiatan tidak ditemukan untuk instansi ini.');
-                    }
-                },
-            ],
-            'id_sub_giat' => [
-                'required',
-                'integer',
-                function ($attribute, $value, $fail) use ($instansi, $subKegiatan) {
-                    $exists = SubKegiatan::where('id_sub_giat', $value)
-                        ->where('instansi', $instansi)
-                        ->where('id', '!=', $subKegiatan->id)
-                        ->exists();
-                    if ($exists) {
-                        $fail('ID Sub Giat sudah digunakan untuk instansi ini.');
                     }
                 },
             ],
@@ -241,23 +193,12 @@ class MasterRekeningController extends Controller
                     }
                 },
             ],
-            'id_akun' => [
-                'required',
-                'integer',
-                function ($attribute, $value, $fail) use ($instansi) {
-                    $exists = KodeRekening::where('id_akun', $value)
-                        ->where('instansi', $instansi)
-                        ->exists();
-                    if ($exists) {
-                        $fail('ID Akun sudah digunakan untuk instansi ini.');
-                    }
-                },
-            ],
             'kode_akun' => 'required|string|max:50',
             'nama_akun' => 'required|string|max:255',
             'is_blokir' => 'nullable|boolean',
         ]);
 
+        $validated['id_akun'] = (KodeRekening::where('instansi', $instansi)->max('id_akun') ?? 0) + 1;
         $validated['is_blokir'] = $request->boolean('is_blokir');
         $validated['instansi'] = $instansi;
 
@@ -286,19 +227,6 @@ class MasterRekeningController extends Controller
                         ->exists();
                     if (!$exists) {
                         $fail('Sub Kegiatan tidak ditemukan untuk instansi ini.');
-                    }
-                },
-            ],
-            'id_akun' => [
-                'required',
-                'integer',
-                function ($attribute, $value, $fail) use ($instansi, $kodeRekening) {
-                    $exists = KodeRekening::where('id_akun', $value)
-                        ->where('instansi', $instansi)
-                        ->where('id', '!=', $kodeRekening->id)
-                        ->exists();
-                    if ($exists) {
-                        $fail('ID Akun sudah digunakan untuk instansi ini.');
                     }
                 },
             ],

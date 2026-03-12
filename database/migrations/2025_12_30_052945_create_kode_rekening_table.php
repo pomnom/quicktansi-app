@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('kode_rekening', function (Blueprint $table) {
             $table->id();
             $table->integer('id_sub_giat');
-            $table->integer('id_akun')->unique();
+            $table->integer('id_akun');
             $table->string('kode_akun', 50);
             $table->string('nama_akun');
             $table->boolean('is_blokir')->default(false);

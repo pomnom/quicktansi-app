@@ -6,7 +6,7 @@
     <title>Login - Kuitansi App</title>
     <link href="{{ asset('admin/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('admin/css/sb-admin-2.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('admin/css/all.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('admin/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
     <style>
         body {
             background: linear-gradient(135deg, #4e73df 0%, #224abe 60%, #1cc88a 100%);

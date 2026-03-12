@@ -166,7 +166,7 @@
                             <td class="text-center">
                                 <div class="d-inline-flex" style="gap:4px;">
                                     <button type="button" class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit"
-                                        onclick="openEditKegiatan({{ $kegiatan->id }}, '{{ $kegiatan->id_giat }}', '{{ $kegiatan->kode_giat }}', '{{ addslashes($kegiatan->nama_giat) }}')">
+                                        onclick="openEditKegiatan({{ $kegiatan->id }}, '{{ $kegiatan->kode_giat }}', '{{ addslashes($kegiatan->nama_giat) }}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <form method="POST" action="{{ route('master-rekening.kegiatan.destroy', $kegiatan->id) }}" class="d-inline" onsubmit="return confirmHapus(event, 'kegiatan ini');">
@@ -232,7 +232,7 @@
                             <td class="text-center">
                                 <div class="d-inline-flex" style="gap:4px;">
                                     <button type="button" class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit"
-                                        onclick="openEditSubKegiatan({{ $subKegiatan->id }}, '{{ $subKegiatan->id_giat }}', '{{ $subKegiatan->id_sub_giat }}', '{{ $subKegiatan->kode_sub_giat }}', '{{ addslashes($subKegiatan->nama_sub_giat) }}')">
+                                        onclick="openEditSubKegiatan({{ $subKegiatan->id }}, '{{ $subKegiatan->id_giat }}', '{{ $subKegiatan->kode_sub_giat }}', '{{ addslashes($subKegiatan->nama_sub_giat) }}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <form method="POST" action="{{ route('master-rekening.sub-kegiatan.destroy', $subKegiatan->id) }}" class="d-inline" onsubmit="return confirmHapus(event, 'sub kegiatan ini');">
@@ -306,7 +306,7 @@
                             <td class="text-center">
                                 <div class="d-inline-flex" style="gap:4px;">
                                     <button type="button" class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit"
-                                        onclick="openEditKodeRekening({{ $rekening->id }}, '{{ $rekening->id_sub_giat }}', '{{ $rekening->id_akun }}', '{{ $rekening->kode_akun }}', '{{ addslashes($rekening->nama_akun) }}', {{ $rekening->is_blokir ? 'true' : 'false' }})">
+                                        onclick="openEditKodeRekening({{ $rekening->id }}, '{{ $rekening->id_sub_giat }}', '{{ $rekening->kode_akun }}', '{{ addslashes($rekening->nama_akun) }}', {{ $rekening->is_blokir ? 'true' : 'false' }})">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <form method="POST" action="{{ route('master-rekening.kode-rekening.destroy', $rekening->id) }}" class="d-inline" onsubmit="return confirmHapus(event, 'kode rekening ini');">
@@ -337,10 +337,6 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="font-weight-bold">ID Giat</label>
-                    <input type="number" name="id_giat" class="form-control" required>
-                </div>
-                <div class="form-group">
                     <label class="font-weight-bold">Kode Giat</label>
                     <input type="text" name="kode_giat" class="form-control" required>
                 </div>
@@ -366,10 +362,6 @@
                 <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label class="font-weight-bold">ID Giat</label>
-                    <input type="number" name="id_giat" id="edit_kegiatan_id_giat" class="form-control" required>
-                </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Giat</label>
                     <input type="text" name="kode_giat" id="edit_kegiatan_kode_giat" class="form-control" required>
@@ -404,10 +396,6 @@
                         <option value="{{ $kegiatan->id_giat }}">{{ $kegiatan->kode_giat }} — {{ $kegiatan->nama_giat }}</option>
                         @endforeach
                     </select>
-                </div>
-                <div class="form-group">
-                    <label class="font-weight-bold">ID Sub Giat</label>
-                    <input type="number" name="id_sub_giat" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Sub Giat</label>
@@ -445,10 +433,6 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="font-weight-bold">ID Sub Giat</label>
-                    <input type="number" name="id_sub_giat" id="edit_sub_kegiatan_id_sub_giat" class="form-control" required>
-                </div>
-                <div class="form-group">
                     <label class="font-weight-bold">Kode Sub Giat</label>
                     <input type="text" name="kode_sub_giat" id="edit_sub_kegiatan_kode_sub_giat" class="form-control" required>
                 </div>
@@ -482,10 +466,6 @@
                         <option value="{{ $subKegiatan->id_sub_giat }}">{{ $subKegiatan->kode_sub_giat }} — {{ $subKegiatan->nama_sub_giat }}</option>
                         @endforeach
                     </select>
-                </div>
-                <div class="form-group">
-                    <label class="font-weight-bold">ID Akun</label>
-                    <input type="number" name="id_akun" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Akun</label>
@@ -531,10 +511,6 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="font-weight-bold">ID Akun</label>
-                    <input type="number" name="id_akun" id="edit_kode_rekening_id_akun" class="form-control" required>
-                </div>
-                <div class="form-group">
                     <label class="font-weight-bold">Kode Akun</label>
                     <input type="text" name="kode_akun" id="edit_kode_rekening_kode_akun" class="form-control" required>
                 </div>
@@ -577,27 +553,24 @@ function confirmHapus(event, label) {
     return false;
 }
 
-function openEditKegiatan(id, idGiat, kodeGiat, namaGiat) {
+function openEditKegiatan(id, kodeGiat, namaGiat) {
     document.getElementById('editKegiatanForm').action = `/master-rekening/kegiatan/${id}`;
-    document.getElementById('edit_kegiatan_id_giat').value = idGiat;
     document.getElementById('edit_kegiatan_kode_giat').value = kodeGiat;
     document.getElementById('edit_kegiatan_nama_giat').value = namaGiat;
     $('#editKegiatanModal').modal('show');
 }
 
-function openEditSubKegiatan(id, idGiat, idSubGiat, kodeSubGiat, namaSubGiat) {
+function openEditSubKegiatan(id, idGiat, kodeSubGiat, namaSubGiat) {
     document.getElementById('editSubKegiatanForm').action = `/master-rekening/sub-kegiatan/${id}`;
     document.getElementById('edit_sub_kegiatan_id_giat').value = idGiat;
-    document.getElementById('edit_sub_kegiatan_id_sub_giat').value = idSubGiat;
     document.getElementById('edit_sub_kegiatan_kode_sub_giat').value = kodeSubGiat;
     document.getElementById('edit_sub_kegiatan_nama_sub_giat').value = namaSubGiat;
     $('#editSubKegiatanModal').modal('show');
 }
 
-function openEditKodeRekening(id, idSubGiat, idAkun, kodeAkun, namaAkun, isBlokir) {
+function openEditKodeRekening(id, idSubGiat, kodeAkun, namaAkun, isBlokir) {
     document.getElementById('editKodeRekeningForm').action = `/master-rekening/kode-rekening/${id}`;
     document.getElementById('edit_kode_rekening_id_sub_giat').value = idSubGiat;
-    document.getElementById('edit_kode_rekening_id_akun').value = idAkun;
     document.getElementById('edit_kode_rekening_kode_akun').value = kodeAkun;
     document.getElementById('edit_kode_rekening_nama_akun').value = namaAkun;
     document.getElementById('edit_kode_rekening_is_blokir').checked = !!isBlokir;
