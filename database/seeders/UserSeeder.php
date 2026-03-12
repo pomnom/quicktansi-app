@@ -18,13 +18,13 @@ class UserSeeder extends Seeder
 
         // Buat user admin default (Superadmin)
         User::create([
-            'nip' => '199001012020011001',
+            'nip' => '199906282025061003',
             'name' => 'Admin Sistem',
             'email' => 'admin@quicktansi.com',
             'no_telp' => '081234567890',
             'instansi' => 'Badan Pengelolaan Keuangan dan Aset Daerah',
             'is_superadmin' => true, // Superadmin dapat melihat semua user
-            'password' => Hash::make('199001012020011001'), // Password default = NIP
+            'password' => Hash::make('199906282025061003'), // Password default = NIP
             'email_verified_at' => now(),
         ]);
 

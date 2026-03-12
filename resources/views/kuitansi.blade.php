@@ -262,10 +262,10 @@
                                 <a href="{{ route('kuitansi.preview', $kuitansi->id) }}" class="btn btn-warning" target="_blank" title="Preview">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <form method="POST" action="{{ route('kuitansi.destroy', $kuitansi->id) }}" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus?');">
+                                <form method="POST" action="{{ route('kuitansi.destroy', $kuitansi->id) }}" style="display:inline;" id="deleteForm{{ $kuitansi->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button class="btn btn-danger" type="submit" title="Hapus">
+                                    <button class="btn btn-danger" type="button" title="Hapus" onclick="confirmDelete({{ $kuitansi->id }}, '{{ addslashes($kuitansi->nama_penerima) }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -758,7 +758,7 @@
                     </div>
 
                     <div class="custom-control custom-checkbox mb-3">
-                        <input type="checkbox" class="custom-control-input" id="edit_ppn_checkbox" name="edit_ppn_checkbox">
+                        <input type="checkbox" class="custom-control-input" id="edit_ppn_checkbox" name="ppn_checkbox">
                         <label class="custom-control-label font-weight-bold" for="edit_ppn_checkbox">Tambahkan PPN 11%</label>
                     </div>
 
@@ -831,6 +831,8 @@
     let itemCounter = 0;
     let editItemCounter = 0;
     let selectedRekeningData = { id_akun: null, kode_akun: null, nama_akun: null };
+    const bendaharaBarangNama = @json($bendaharaBarang->nama ?? null);
+    const bendaharaBarangNip  = @json($bendaharaBarang->nip  ?? null);
 
     $(document).ready(function () {
         // Initialize DataTable
@@ -1022,6 +1024,34 @@
     function truncateText(text, maxLength = 50) {
         return text && text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
+
+    // Bendahara Barang checkbox — Add form
+    $('#bendahara_checkbox').on('change', function() {
+        if (this.checked && bendaharaBarangNama) {
+            $('#nama_bendahara_barang').val(bendaharaBarangNama);
+            $('#nip_bendahara_barang').val(bendaharaBarangNip || '');
+            $('#display_bendahara_nama').text(bendaharaBarangNama);
+            $('#bendahara_info').show();
+        } else {
+            $('#nama_bendahara_barang').val('');
+            $('#nip_bendahara_barang').val('');
+            $('#bendahara_info').hide();
+        }
+    });
+
+    // Bendahara Barang checkbox — Edit form
+    $('#edit_bendahara_checkbox').on('change', function() {
+        if (this.checked && bendaharaBarangNama) {
+            $('#edit_nama_bendahara_barang').val(bendaharaBarangNama);
+            $('#edit_nip_bendahara_barang').val(bendaharaBarangNip || '');
+            $('#edit_display_bendahara_nama').text(bendaharaBarangNama);
+            $('#edit_bendahara_info').show();
+        } else {
+            $('#edit_nama_bendahara_barang').val('');
+            $('#edit_nip_bendahara_barang').val('');
+            $('#edit_bendahara_info').hide();
+        }
+    });
 
     $('#selectRekeningModal').on('shown.bs.modal', loadKegiatan);
 
@@ -1239,10 +1269,42 @@
                     addEditItemRowWithData(item.nama, item.jumlah, item.harga_satuan, item.is_jasa || false);
                 });
             }
+            // Restore PPN checkbox
+            const hasPPN = parseInt(data.ppn || 0) > 0;
+            $('#edit_ppn_checkbox').prop('checked', hasPPN);
             calculateEditPPH();
             calculateEditTotalAkhir();
+
+            // Restore bendahara barang state
+            const hasBB = !!data.nama_bendahara_barang;
+            $('#edit_bendahara_checkbox').prop('checked', hasBB);
+            $('#edit_nama_bendahara_barang').val(data.nama_bendahara_barang || '');
+            $('#edit_nip_bendahara_barang').val(data.nip_bendahara_barang || '');
+            if (hasBB) {
+                $('#edit_display_bendahara_nama').text(data.nama_bendahara_barang);
+                $('#edit_bendahara_info').show();
+            } else {
+                $('#edit_bendahara_info').hide();
+            }
         });
     });
+
+    function confirmDelete(id, nama) {
+        Swal.fire({
+            title: 'Hapus Kuitansi?',
+            text: nama,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74a3b',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('deleteForm' + id).submit();
+            }
+        });
+    }
 
     function formatPeriodeLengkap(type, number) {
         return `${type}-${number}`;

@@ -124,10 +124,10 @@
                                 <button class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit" onclick='editRekanan(@json($rekanan))'>
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <form action="{{ route('rekanan.destroy', $rekanan->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus rekanan ini?')">
+                                <form action="{{ route('rekanan.destroy', $rekanan->id) }}" method="POST" style="display:inline;" id="deleteRekananForm{{ $rekanan->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" style="border-radius:8px;" title="Hapus">
+                                    <button type="button" class="btn btn-danger btn-sm" style="border-radius:8px;" title="Hapus" onclick="confirmHapusRekanan({{ $rekanan->id }}, '{{ addslashes($rekanan->nama_pemilik_rekening) }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -249,6 +249,19 @@
 
 @push('scripts')
 <script>
+    function confirmHapusRekanan(id, nama) {
+        Swal.fire({
+            title: 'Hapus Rekanan?',
+            text: nama,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74a3b',
+            cancelButtonColor: '#858796',
+            confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus',
+            cancelButtonText: 'Batal'
+        }).then((result) => { if (result.isConfirmed) document.getElementById('deleteRekananForm' + id).submit(); });
+    }
+
     function editRekanan(rekanan) {
         $('#edit_npwp').val(rekanan.npwp);
         $('#edit_nama_perusahaan').val(rekanan.nama_perusahaan);

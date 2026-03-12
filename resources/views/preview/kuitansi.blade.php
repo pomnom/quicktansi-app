@@ -178,14 +178,14 @@
         @endif
         @if($pph22Amount > 0)
         <tr>
-            <td class="label">PPH 22 (Barang)</td>
+            <td class="label">PPH 22</td>
             <td class="colon">:</td>
             <td class="value">Rp {{ number_format($pph22Amount, 0, ',', '.') }}</td>
         </tr>
         @endif
         @if($pph23Amount > 0)
         <tr>
-            <td class="label">PPH 23 (Jasa)</td>
+            <td class="label">PPH 23</td>
             <td class="colon">:</td>
             <td class="value">Rp {{ number_format($pph23Amount, 0, ',', '.') }}</td>
         </tr>
@@ -217,8 +217,10 @@
         <tr>
             <!-- Mengetahui - Pengguna Anggaran -->
             <td class="signature-cell">
-                <p class="role-title">Mengetahui</p>
-                <p class="role-subtitle">Pengguna Anggaran<br>BPKAD Kab. Dompu</p>
+                <div class="sig-header">
+                    <p class="role-title">Mengetahui</p>
+                    <p class="role-subtitle">Pengguna Anggaran<br>BPKAD Kab. Dompu</p>
+                </div>
                 <p class="sig-name">{{ $kuitansi->nama_pengguna_anggaran ?? $penggunaAnggaran->nama ?? 'N/A' }}</p>
                 <div class="sig-line"></div>
                 <p class="sig-nip">NIP. {{ $kuitansi->nip_pengguna_anggaran ?? $penggunaAnggaran->nip ?? '-' }}</p>
@@ -226,8 +228,10 @@
 
             <!-- Lunas dibayar - Bendahara Pengeluaran -->
             <td class="signature-cell">
-                <p class="role-title">Lunas dibayar</p>
-                <p class="role-subtitle">Bendahara Pengeluaran</p>
+                <div class="sig-header">
+                    <p class="role-title">Lunas dibayar</p>
+                    <p class="role-subtitle">Bendahara Pengeluaran</p>
+                </div>
                 <p class="sig-name">{{ $kuitansi->nama_bendahara_pengeluaran ?? $bendaharaPengeluaran->nama ?? 'N/A' }}</p>
                 <div class="sig-line"></div>
                 <p class="sig-nip">NIP. {{ $kuitansi->nip_bendahara_pengeluaran ?? $bendaharaPengeluaran->nip ?? '-' }}</p>
@@ -235,11 +239,11 @@
 
             <!-- Yang Menerima Uang - Rekanan -->
             <td class="signature-cell">
-                <p class="role-title">Yang Menerima Uang</p>
-                <p class="role-subtitle">Rekanan</p>
+                <div class="sig-header">
+                    <p class="role-subtitle">Dompu,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ now()->year }}</p>
+                    <p class="role-title">Yang Menerima Uang</p>
+                </div>
                 <p class="sig-name">{{ $kuitansi->nama_penerima }}</p>
-                <div class="sig-line"></div>
-                <p class="sig-nip">{{ $kuitansi->rekanan->npwp ?? '-' }}</p>
             </td>
         </tr>
 
@@ -249,16 +253,19 @@
                 <div class="signature-row-center">
                     @if($kuitansi->nama_bendahara_barang)
                     <div class="signature-block">
-                        <p class="role-title">Telah diperiksa cukup</p>
-                        <p class="role-subtitle">Bendahara Barang</p>
+                        <div class="sig-header">
+                            <p class="role-title">Telah diperiksa cukup</p>
+                            <p class="role-subtitle">Bendahara Barang</p>
+                        </div>
                         <p class="sig-name">{{ $kuitansi->nama_bendahara_barang }}</p>
                         <div class="sig-line"></div>
                         <p class="sig-nip">{{ $kuitansi->nip_bendahara_barang ? 'NIP. ' . $kuitansi->nip_bendahara_barang : '' }}</p>
                     </div>
                     @endif
                     <div class="signature-block">
-                        <p class="role-title">Pejabat Pelaksana Teknis Kegiatan</p>
-                        <p class="role-subtitle">{{ $kuitansi->pptk->jabatan ?? 'PPTK' }}</p>
+                        <div class="sig-header">
+                            <p class="role-title">Pejabat Pelaksana Teknis Kegiatan</p>
+                        </div>
                         <p class="sig-name">{{ $kuitansi->nama_pptk ?? $kuitansi->pptk->nama ?? 'N/A' }}</p>
                         <div class="sig-line"></div>
                         <p class="sig-nip">NIP. {{ $kuitansi->nip_pptk ?? $kuitansi->pptk->nip ?? '-' }}</p>

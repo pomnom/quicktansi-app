@@ -569,18 +569,25 @@ body {
         padding: 5px;
     }
 
+    .signature-table .sig-header {
+        height: 36px;
+    }
+
     .signature-table .role-title {
         font-size: 9px;
+        margin: 0;
+        line-height: 1.3;
     }
 
     .signature-table .role-subtitle {
         font-size: 8px;
-        min-height: 25px;
+        margin: 0;
+        line-height: 1.3;
     }
 
     .signature-table .sig-name {
         font-size: 9px;
-        margin: 40px 0 2px 0;
+        margin: 75px 0 2px 0;
     }
 
     .signature-table .sig-nip {
@@ -773,24 +780,30 @@ body.dark-mode .field {
     vertical-align: top;
     width: 33.33%;
 }
+.signature-table .sig-header {
+    height: 46px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+}
 .signature-table .role-title {
     font-weight: bold;
     font-size: 11px;
-    margin: 0 0 2px 0;
+    margin: 0;
+    line-height: 1.3;
 }
 .signature-table .role-subtitle {
     font-size: 10px;
     margin: 0;
-    line-height: 1.4;
-    min-height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    line-height: 1.3;
+    text-align: center;
 }
 .signature-table .sig-name {
     font-weight: bold;
     font-size: 11px;
-    margin: 65px 0 2px 0;
+    margin: 75px 0 2px 0;
 }
 .signature-table .sig-line {
     border-top: 1px solid #000;
@@ -893,7 +906,7 @@ body.dark-mode .field {
         margin: 15px 0;
     }
     .signature-table .sig-name {
-        margin: 40px 0 2px 0;
+        margin: 75px 0 2px 0;
     }
     .items-table th,
     .items-table td {
