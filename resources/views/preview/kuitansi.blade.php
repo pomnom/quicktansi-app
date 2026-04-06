@@ -173,13 +173,17 @@
             @php $grandTotal = 0; @endphp
             @foreach($kuitansi->rincian_item as $item)
             @php 
-                $itemTotal = $item['jumlah'] * $item['harga_satuan'];
+                $qtyRaw = $item['jumlah'] ?? null;
+                $qty = (is_numeric($qtyRaw) && (float)$qtyRaw > 0) ? (int)$qtyRaw : 1;
+                $unit = trim((string)($item['satuan'] ?? ''));
+                $qtyDisplay = trim($qty . ($unit !== '' ? ' ' . $unit : ''));
+                $itemTotal = $qty * $item['harga_satuan'];
                 $grandTotal += $itemTotal;
                 $isJasa = !empty($item['is_jasa']);
             @endphp
             <tr>
                 <td>{{ $item['nama'] }}@if($isJasa) <em style="font-size:10px; color:#36b9cc;">(Jasa)</em>@endif</td>
-                <td class="number">{{ $item['jumlah'] }}</td>
+                <td class="number">{{ $qtyDisplay }}</td>
                 <td class="number">{{ number_format($item['harga_satuan'], 2, ',', '.') }}</td>
                 <td class="number">{{ number_format($itemTotal, 2, ',', '.') }}</td>
             </tr>

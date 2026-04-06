@@ -74,6 +74,14 @@ $(document).on("change input", ".item-qty, .item-price", function () {
     calculateEditTotalAkhir();
 });
 
+function getQtyFromRow(row) {
+    const qtyInput = row.querySelector(".item-qty");
+    const raw = (qtyInput?.value || "").trim();
+    if (raw === "") return 1;
+    const parsed = parseFloat(raw);
+    return !Number.isNaN(parsed) && parsed > 0 ? parsed : 1;
+}
+
 // Recalculate PPH 23 when jasa checkbox changes
 $(document).on("change", ".item-jasa", function () {
     const isEditTable =
@@ -101,7 +109,7 @@ function calculateDPP() {
     // Calculate DPP from items
     let dpp = 0;
     document.querySelectorAll("#itemsBody tr").forEach(function (row) {
-        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const qty = getQtyFromRow(row);
         const price = parseFloat(row.querySelector(".item-price").value) || 0;
         dpp += qty * price;
     });
@@ -112,7 +120,7 @@ function calculateEditDPP() {
     // Calculate DPP from items
     let dpp = 0;
     document.querySelectorAll("#editItemsBody tr").forEach(function (row) {
-        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const qty = getQtyFromRow(row);
         const price = parseFloat(row.querySelector(".item-price").value) || 0;
         dpp += qty * price;
     });
@@ -124,7 +132,7 @@ function calculateJasaDPP() {
     document.querySelectorAll("#itemsBody tr").forEach(function (row) {
         const isJasa = row.querySelector(".item-jasa")?.checked || false;
         if (!isJasa) return;
-        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const qty = getQtyFromRow(row);
         const price = parseFloat(row.querySelector(".item-price").value) || 0;
         dpp += qty * price;
     });
@@ -136,7 +144,7 @@ function calculateEditJasaDPP() {
     document.querySelectorAll("#editItemsBody tr").forEach(function (row) {
         const isJasa = row.querySelector(".item-jasa")?.checked || false;
         if (!isJasa) return;
-        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const qty = getQtyFromRow(row);
         const price = parseFloat(row.querySelector(".item-price").value) || 0;
         dpp += qty * price;
     });
@@ -148,7 +156,7 @@ function calculateBarangDPP() {
     document.querySelectorAll("#itemsBody tr").forEach(function (row) {
         const isJasa = row.querySelector(".item-jasa")?.checked || false;
         if (isJasa) return;
-        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const qty = getQtyFromRow(row);
         const price = parseFloat(row.querySelector(".item-price").value) || 0;
         dpp += qty * price;
     });
@@ -160,7 +168,7 @@ function calculateEditBarangDPP() {
     document.querySelectorAll("#editItemsBody tr").forEach(function (row) {
         const isJasa = row.querySelector(".item-jasa")?.checked || false;
         if (isJasa) return;
-        const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+        const qty = getQtyFromRow(row);
         const price = parseFloat(row.querySelector(".item-price").value) || 0;
         dpp += qty * price;
     });

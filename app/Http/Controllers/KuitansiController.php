@@ -21,9 +21,36 @@ class KuitansiController extends Controller
         $kuitansis = Kuitansi::with('rekanan')->where('instansi', $userInstansi)->get();
         $rekanans = Rekanan::where('instansi', $userInstansi)->get();
         $pptks = Staff::where('status', 'PPTK')->where('instansi', $userInstansi)->get();
+        $staffs = Staff::where('instansi', $userInstansi)->orderBy('nama')->get();
         $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->where('instansi', $userInstansi)->first();
         $kodeObjekPajaks = DB::table('kode_objek_pajaks')->orderBy('kode')->get();
-        return view('kuitansi', compact('kuitansis', 'rekanans', 'pptks', 'bendaharaBarang', 'kodeObjekPajaks'));
+        return view('kuitansi', compact('kuitansis', 'rekanans', 'staffs', 'pptks', 'bendaharaBarang', 'kodeObjekPajaks'));
+    }
+
+    private function resolvePenerima(Request $request): array
+    {
+        $userInstansi = auth()->user()->instansi;
+        $penerimaType = $request->input('penerima_type');
+
+        if ($penerimaType === 'rekanan') {
+            $rekanan = Rekanan::where('id', $request->rekanan_id)
+                ->where('instansi', $userInstansi)
+                ->firstOrFail();
+
+            return [
+                'rekanan_id' => $rekanan->id,
+                'nama_penerima' => $rekanan->nama_perusahaan,
+            ];
+        }
+
+        $staff = Staff::where('id', $request->staff_id)
+            ->where('instansi', $userInstansi)
+            ->firstOrFail();
+
+        return [
+            'rekanan_id' => null,
+            'nama_penerima' => $staff->nama,
+        ];
     }
 
     public function getNextPeriodeNumber(Request $request)
@@ -71,7 +98,9 @@ class KuitansiController extends Controller
             'nomor_rekening' => 'required|string|max:255',
             'periode_lengkap' => 'required|string|max:50',
             'nomor_urut' => 'required|string|max:3',
-            'rekanan_id' => 'required|exists:rekanans,id',
+            'penerima_type' => 'required|in:rekanan,staff',
+            'rekanan_id' => 'nullable|integer',
+            'staff_id' => 'nullable|exists:staff,id',
             'tanggal_kuitansi' => 'required|date',
             'rincian_item_json' => 'nullable|json',
             'kode_objek_pajak_23' => 'nullable|string|max:100',
@@ -79,13 +108,20 @@ class KuitansiController extends Controller
             'pptk_1_id' => 'required|exists:staff,id',
         ]);
 
+        if ($request->penerima_type === 'rekanan' && !$request->rekanan_id) {
+            return back()->withErrors(['rekanan_id' => 'Penerima rekanan wajib dipilih.'])->withInput();
+        }
+        if ($request->penerima_type === 'staff' && !$request->staff_id) {
+            return back()->withErrors(['staff_id' => 'Penerima staff wajib dipilih.'])->withInput();
+        }
+
         // Parse periode_lengkap (supports "TU-1" or "UP 1" format)
         $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
         $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
         $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
         $nomorUrut = (int) $request->nomor_urut;
 
-        $rekanan = Rekanan::findOrFail($request->rekanan_id);
+        $penerima = $this->resolvePenerima($request);
 
         $rincianItem = null;
         if ($request->rincian_item_json) {
@@ -98,7 +134,8 @@ class KuitansiController extends Controller
         $dppJasa = 0;
         if (is_array($rincianItem)) {
             foreach ($rincianItem as $item) {
-                $jumlah = (int) ($item['jumlah'] ?? 0);
+                $jumlahRaw = $item['jumlah'] ?? null;
+                $jumlah = (is_numeric($jumlahRaw) && (float) $jumlahRaw > 0) ? (int) $jumlahRaw : 1;
                 $harga = (float) ($item['harga_satuan'] ?? 0);
                 $subtotal = $jumlah * $harga;
                 $dpp += $subtotal;
@@ -170,8 +207,8 @@ class KuitansiController extends Controller
             'periode_number' => $periodeNumber,
             'nomor_urut' => $nomorUrut,
             'no_buku' => $noBuku,
-            'rekanan_id' => $request->rekanan_id,
-            'nama_penerima' => $rekanan->nama_perusahaan,
+            'rekanan_id' => $penerima['rekanan_id'],
+            'nama_penerima' => $penerima['nama_penerima'],
             'tanggal_kuitansi' => $request->tanggal_kuitansi,
             'ppn' => $ppnAmount,
             'pph' => $pphAmount,
@@ -219,7 +256,9 @@ class KuitansiController extends Controller
             'nomor_rekening' => 'required|string|max:255',
             'periode_lengkap' => 'required|string|max:50',
             'nomor_urut' => 'required|string|max:3',
-            'rekanan_id' => 'required|exists:rekanans,id',
+            'penerima_type' => 'required|in:rekanan,staff',
+            'rekanan_id' => 'nullable|integer',
+            'staff_id' => 'nullable|exists:staff,id',
             'tanggal_kuitansi' => 'required|date',
             'jenis_pph' => 'nullable|string|max:5',
             'rincian_item_json' => 'nullable|json',
@@ -228,6 +267,13 @@ class KuitansiController extends Controller
             'pptk_1_id' => 'required|exists:staff,id',
         ]);
 
+        if ($request->penerima_type === 'rekanan' && !$request->rekanan_id) {
+            return back()->withErrors(['rekanan_id' => 'Penerima rekanan wajib dipilih.'])->withInput();
+        }
+        if ($request->penerima_type === 'staff' && !$request->staff_id) {
+            return back()->withErrors(['staff_id' => 'Penerima staff wajib dipilih.'])->withInput();
+        }
+
         // Parse periode_lengkap (supports "TU-1" or "UP 1" format)
         $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
         $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
@@ -235,7 +281,7 @@ class KuitansiController extends Controller
         $nomorUrut = (int) $request->nomor_urut;
 
         $kuitansi = Kuitansi::findOrFail($id);
-        $rekanan = Rekanan::findOrFail($request->rekanan_id);
+        $penerima = $this->resolvePenerima($request);
 
         $rincianItem = null;
         if ($request->rincian_item_json) {
@@ -248,7 +294,8 @@ class KuitansiController extends Controller
         $dppJasa = 0;
         if (is_array($rincianItem)) {
             foreach ($rincianItem as $item) {
-                $jumlah = (int) ($item['jumlah'] ?? 0);
+                $jumlahRaw = $item['jumlah'] ?? null;
+                $jumlah = (is_numeric($jumlahRaw) && (float) $jumlahRaw > 0) ? (int) $jumlahRaw : 1;
                 $harga = (float) ($item['harga_satuan'] ?? 0);
                 $subtotal = $jumlah * $harga;
                 $dpp += $subtotal;
@@ -321,8 +368,8 @@ class KuitansiController extends Controller
             'periode_number' => $periodeNumber,
             'nomor_urut' => $nomorUrut,
             'no_buku' => $noBuku,
-            'rekanan_id' => $request->rekanan_id,
-            'nama_penerima' => $rekanan->nama_perusahaan,
+            'rekanan_id' => $penerima['rekanan_id'],
+            'nama_penerima' => $penerima['nama_penerima'],
             'tanggal_kuitansi' => $request->tanggal_kuitansi,
             'ppn' => $ppnAmount,
             'pph' => $pphAmount,

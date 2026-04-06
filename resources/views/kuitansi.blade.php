@@ -397,15 +397,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="rekanan_id" class="font-weight-bold small">Penerima (Rekanan) <span class="text-danger">*</span></label>
-                        <select class="form-control" id="rekanan_id" name="rekanan_id" required>
-                            <option value="">-- Pilih Rekanan --</option>
-                            @foreach($rekanans as $rekanan)
-                                <option value="{{ $rekanan->id }}" data-npwp="{{ $rekanan->npwp }}">
-                                    {{ $rekanan->nama_perusahaan }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <label for="penerima_lookup" class="font-weight-bold small">Penerima (Rekanan / Staff) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="penerima_lookup" list="penerimaList" placeholder="Ketik nama penerima..." autocomplete="off" required>
+                        <input type="hidden" id="rekanan_id" name="rekanan_id">
+                        <input type="hidden" id="staff_id" name="staff_id">
+                        <input type="hidden" id="penerima_type" name="penerima_type">
+                        <small class="text-muted">Pilih dari daftar: rekanan atau staff (untuk perjalanan dinas).</small>
                     </div>
 
                     <hr class="my-3">
@@ -435,6 +432,7 @@
                                 <tr>
                                     <th>Nama Item</th>
                                     <th style="width:90px;">Jumlah</th>
+                                    <th style="width:120px;">Satuan</th>
                                     <th style="width:140px;">Harga Satuan (Rp)</th>
                                     <th class="jasa-col text-center" style="width:64px;" title="Centang jika item ini adalah jasa (berlaku PPH 23)">Jasa?</th>
                                     <th style="width:46px;"></th>
@@ -624,15 +622,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="edit_rekanan_id" class="font-weight-bold small">Penerima (Rekanan) <span class="text-danger">*</span></label>
-                        <select class="form-control" id="edit_rekanan_id" name="rekanan_id" required>
-                            <option value="">-- Pilih Rekanan --</option>
-                            @foreach($rekanans as $rekanan)
-                                <option value="{{ $rekanan->id }}" data-npwp="{{ $rekanan->npwp }}">
-                                    {{ $rekanan->nama_perusahaan }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <label for="edit_penerima_lookup" class="font-weight-bold small">Penerima (Rekanan / Staff) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_penerima_lookup" list="editPenerimaList" placeholder="Ketik nama penerima..." autocomplete="off" required>
+                        <input type="hidden" id="edit_rekanan_id" name="rekanan_id">
+                        <input type="hidden" id="edit_staff_id" name="staff_id">
+                        <input type="hidden" id="edit_penerima_type" name="penerima_type">
+                        <small class="text-muted">Pilih dari daftar: rekanan atau staff (untuk perjalanan dinas).</small>
                     </div>
 
                     <hr class="my-3">
@@ -662,6 +657,7 @@
                                 <tr>
                                     <th>Nama Item</th>
                                     <th style="width:90px;">Jumlah</th>
+                                    <th style="width:120px;">Satuan</th>
                                     <th style="width:140px;">Harga Satuan (Rp)</th>
                                     <th class="jasa-col text-center" style="width:64px;" title="Centang jika item ini adalah jasa (berlaku PPH 23)">Jasa?</th>
                                     <th style="width:46px;"></th>
@@ -803,6 +799,24 @@
 <datalist id="kodeObjekPajakList">
     @foreach($kodeObjekPajaks as $kop)
         <option value="{{ $kop->kode }}">{{ $kop->kode }} - {{ $kop->nama }} ({{ $kop->tarif }}%)</option>
+    @endforeach
+</datalist>
+
+<datalist id="penerimaList">
+    @foreach($rekanans as $rekanan)
+        <option value="{{ $rekanan->nama_perusahaan }} (Rekanan)" data-type="rekanan" data-id="{{ $rekanan->id }}" data-name="{{ $rekanan->nama_perusahaan }}" label="{{ $rekanan->npwp ? 'NPWP: '.$rekanan->npwp : 'Rekanan' }}"></option>
+    @endforeach
+    @foreach($staffs as $staff)
+        <option value="{{ $staff->nama }} (Staff)" data-type="staff" data-id="{{ $staff->id }}" data-name="{{ $staff->nama }}" label="{{ $staff->nip ? 'NIP: '.$staff->nip : 'Staff' }}"></option>
+    @endforeach
+</datalist>
+
+<datalist id="editPenerimaList">
+    @foreach($rekanans as $rekanan)
+        <option value="{{ $rekanan->nama_perusahaan }} (Rekanan)" data-type="rekanan" data-id="{{ $rekanan->id }}" data-name="{{ $rekanan->nama_perusahaan }}" label="{{ $rekanan->npwp ? 'NPWP: '.$rekanan->npwp : 'Rekanan' }}"></option>
+    @endforeach
+    @foreach($staffs as $staff)
+        <option value="{{ $staff->nama }} (Staff)" data-type="staff" data-id="{{ $staff->id }}" data-name="{{ $staff->nama }}" label="{{ $staff->nip ? 'NIP: '.$staff->nip : 'Staff' }}"></option>
     @endforeach
 </datalist>
 
@@ -1011,6 +1025,73 @@
         return text && text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
 
+    function syncPenerimaFromInput(inputSelector, listSelector, hiddenRekananSelector, hiddenStaffSelector, hiddenTypeSelector) {
+        const inputValue = $(inputSelector).val();
+        const option = $(`${listSelector} option`).filter(function () {
+            return $(this).val() === inputValue;
+        }).first();
+
+        if (!option.length) {
+            $(hiddenRekananSelector).val('');
+            $(hiddenStaffSelector).val('');
+            $(hiddenTypeSelector).val('');
+            return;
+        }
+
+        const type = option.data('type');
+        const id = option.data('id');
+
+        if (type === 'rekanan') {
+            $(hiddenRekananSelector).val(id);
+            $(hiddenStaffSelector).val('');
+            $(hiddenTypeSelector).val('rekanan');
+            return;
+        }
+
+        if (type === 'staff') {
+            $(hiddenRekananSelector).val('');
+            $(hiddenStaffSelector).val(id);
+            $(hiddenTypeSelector).val('staff');
+            return;
+        }
+
+        $(hiddenRekananSelector).val('');
+        $(hiddenStaffSelector).val('');
+        $(hiddenTypeSelector).val('');
+    }
+
+    function setPenerimaInputFromData(inputSelector, listSelector, hiddenRekananSelector, hiddenStaffSelector, hiddenTypeSelector, rekananId, namaPenerima) {
+        let option = null;
+        if (rekananId) {
+            option = $(`${listSelector} option[data-type="rekanan"][data-id="${rekananId}"]`).first();
+        } else if (namaPenerima) {
+            const normalizedNama = String(namaPenerima).trim().toLowerCase();
+            option = $(`${listSelector} option[data-type="staff"]`).filter(function () {
+                const optionName = String($(this).data('name') || '').trim().toLowerCase();
+                return optionName === normalizedNama;
+            }).first();
+        }
+
+        if (option && option.length) {
+            $(inputSelector).val(option.val());
+            syncPenerimaFromInput(inputSelector, listSelector, hiddenRekananSelector, hiddenStaffSelector, hiddenTypeSelector);
+            return;
+        }
+
+        $(inputSelector).val('');
+        $(hiddenRekananSelector).val('');
+        $(hiddenStaffSelector).val('');
+        $(hiddenTypeSelector).val('');
+    }
+
+    $('#penerima_lookup').on('input change', function() {
+        syncPenerimaFromInput('#penerima_lookup', '#penerimaList', '#rekanan_id', '#staff_id', '#penerima_type');
+    });
+
+    $('#edit_penerima_lookup').on('input change', function() {
+        syncPenerimaFromInput('#edit_penerima_lookup', '#editPenerimaList', '#edit_rekanan_id', '#edit_staff_id', '#edit_penerima_type');
+    });
+
     // Bendahara Barang checkbox — Add form
     $('#bendahara_checkbox').on('change', function() {
         if (this.checked && bendaharaBarangNama) {
@@ -1132,7 +1213,8 @@
         row.id = rowId;
         row.innerHTML = `
             <td><input type="text" class="form-control form-control-sm item-name" placeholder="Nama item"></td>
-            <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah" min="1" step="1"></td>
+            <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah (opsional)" min="1" step="1"></td>
+            <td><input type="text" class="form-control form-control-sm item-unit" placeholder="Contoh: pcs"></td>
             <td><input type="number" class="form-control form-control-sm item-price" placeholder="Harga satuan" min="0" step="0.01"></td>
             <td class="jasa-col text-center"><input type="checkbox" class="item-jasa"></td>
             <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow('${rowId}')"><i class="fas fa-trash"></i></button></td>
@@ -1141,17 +1223,18 @@
     }
 
     function addEditItemRow() {
-        addEditItemRowWithData('', '', '', false);
+        addEditItemRowWithData('', '', '', '', false);
     }
 
-    function addEditItemRowWithData(nama, jumlah, harga, isJasa) {
+    function addEditItemRowWithData(nama, jumlah, satuan, harga, isJasa) {
         const tbody = document.getElementById('editItemsBody');
         const rowId = 'edit_item_' + editItemCounter++;
         const row = document.createElement('tr');
         row.id = rowId;
         row.innerHTML = `
             <td><input type="text" class="form-control form-control-sm item-name" placeholder="Nama item" value="${nama}"></td>
-            <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah" min="1" step="1" value="${jumlah}"></td>
+            <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah (opsional)" min="1" step="1" value="${jumlah}"></td>
+            <td><input type="text" class="form-control form-control-sm item-unit" placeholder="Contoh: pcs" value="${satuan}"></td>
             <td><input type="number" class="form-control form-control-sm item-price" placeholder="Harga satuan" min="0" step="0.01" value="${harga}"></td>
             <td class="jasa-col text-center"><input type="checkbox" class="item-jasa" ${isJasa ? 'checked' : ''}></td>
             <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow('${rowId}')"><i class="fas fa-trash"></i></button></td>
@@ -1167,11 +1250,13 @@
         const items = [];
         document.querySelectorAll('#itemsBody tr').forEach(row => {
             const name = row.querySelector('.item-name').value;
-            const qty = row.querySelector('.item-qty').value;
+            const qtyRaw = row.querySelector('.item-qty').value;
+            const unit = row.querySelector('.item-unit').value;
             const price = row.querySelector('.item-price').value;
-            if (name && qty && price) {
+            if (name && price) {
                 const isJasa = row.querySelector('.item-jasa')?.checked || false;
-                items.push({ nama: name, jumlah: parseInt(qty), harga_satuan: parseFloat(price), is_jasa: isJasa });
+                const qty = qtyRaw ? parseInt(qtyRaw, 10) : 1;
+                items.push({ nama: name, jumlah: qty, satuan: unit, harga_satuan: parseFloat(price), is_jasa: isJasa });
             }
         });
         document.getElementById('rincian_item_json').value = JSON.stringify(items);
@@ -1179,6 +1264,11 @@
 
     function updateAddFormBefore(event) {
         event.preventDefault();
+        syncPenerimaFromInput('#penerima_lookup', '#penerimaList', '#rekanan_id', '#staff_id', '#penerima_type');
+        if (!document.getElementById('penerima_type').value) {
+            Swal.fire('Peringatan', 'Pilih penerima dari daftar yang tersedia.', 'warning');
+            return;
+        }
         if (!document.getElementById('bendahara_checkbox').checked) {
             document.getElementById('nama_bendahara_barang').value = '';
             document.getElementById('nip_bendahara_barang').value = '';
@@ -1189,6 +1279,11 @@
 
     function updateEditFormBefore(event) {
         event.preventDefault();
+        syncPenerimaFromInput('#edit_penerima_lookup', '#editPenerimaList', '#edit_rekanan_id', '#edit_staff_id', '#edit_penerima_type');
+        if (!document.getElementById('edit_penerima_type').value) {
+            Swal.fire('Peringatan', 'Pilih penerima dari daftar yang tersedia.', 'warning');
+            return;
+        }
         if (!document.getElementById('edit_bendahara_checkbox').checked) {
             document.getElementById('edit_nama_bendahara_barang').value = '';
             document.getElementById('edit_nip_bendahara_barang').value = '';
@@ -1201,11 +1296,13 @@
         const items = [];
         document.querySelectorAll('#editItemsBody tr').forEach(row => {
             const name = row.querySelector('.item-name').value;
-            const qty = row.querySelector('.item-qty').value;
+            const qtyRaw = row.querySelector('.item-qty').value;
+            const unit = row.querySelector('.item-unit').value;
             const price = row.querySelector('.item-price').value;
-            if (name && qty && price) {
+            if (name && price) {
                 const isJasa = row.querySelector('.item-jasa')?.checked || false;
-                items.push({ nama: name, jumlah: parseInt(qty), harga_satuan: parseFloat(price), is_jasa: isJasa });
+                const qty = qtyRaw ? parseInt(qtyRaw, 10) : 1;
+                items.push({ nama: name, jumlah: qty, satuan: unit, harga_satuan: parseFloat(price), is_jasa: isJasa });
             }
         });
         document.getElementById('edit_rincian_item_json').value = JSON.stringify(items);
@@ -1216,7 +1313,7 @@
         $.get('/kuitansi/' + id + '/edit', function(data) {
             $('#edit_nomor_urut').val(String(data.nomor_urut).padStart(3, '0'));
             $('#edit_periode_lengkap').val(formatPeriodeLengkap(data.periode_type, data.periode_number)).trigger('change');
-            $('#edit_rekanan_id').val(data.rekanan_id).trigger('change');
+            setPenerimaInputFromData('#edit_penerima_lookup', '#editPenerimaList', '#edit_rekanan_id', '#edit_staff_id', '#edit_penerima_type', data.rekanan_id, data.nama_penerima);
             $('#edit_tanggal_kuitansi').val(data.tanggal_kuitansi);
             $('#edit_untuk_pembayaran').val(data.untuk_pembayaran);
             $('#edit_pptk_1_id').val(data.pptk_1_id).trigger('change');
@@ -1252,7 +1349,7 @@
             editItemCounter = 0;
             if (data.rincian_item && Array.isArray(data.rincian_item)) {
                 data.rincian_item.forEach(function(item) {
-                    addEditItemRowWithData(item.nama, item.jumlah, item.harga_satuan, item.is_jasa || false);
+                    addEditItemRowWithData(item.nama, item.jumlah || '', item.satuan || '', item.harga_satuan, item.is_jasa || false);
                 });
             }
             // Restore PPN checkbox
