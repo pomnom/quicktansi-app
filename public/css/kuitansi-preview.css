@@ -252,6 +252,48 @@ body {
     padding: 24px 28px;
 }
 
+/* ── KOP SURAT ─────────────────────────────────────────── */
+.kop-surat {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 6px;
+}
+.kop-logo {
+    flex-shrink: 0;
+}
+.kop-text {
+    flex: 1;
+    text-align: center;
+}
+.kop-pemerintah {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+}
+.kop-instansi {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1.3;
+}
+.kop-alamat {
+    font-size: 10px;
+    color: #444;
+    margin-top: 2px;
+}
+.kop-divider {
+    border: none;
+    border-top: 3px solid #333;
+    margin-bottom: 12px;
+}
+@media print {
+    .kop-surat {
+        break-inside: avoid;
+    }
+}
+
 /* Header row: left stamp + right info table — flex so print matches screen */
 .doc-header {
     display: flex;

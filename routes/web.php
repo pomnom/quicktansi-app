@@ -24,7 +24,7 @@ use App\Http\Controllers\ProfileController;
 
 // Auth Routes
 Route::get('login', [AuthController::class, 'showLogin'])->name('login')->middleware('guest');
-Route::post('login', [AuthController::class, 'login'])->name('auth.login')->middleware('guest');
+Route::post('login', [AuthController::class, 'login'])->name('auth.login')->middleware(['guest', 'throttle:5,1']);
 Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Dashboard & Main Routes (Protected by auth middleware)

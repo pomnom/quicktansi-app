@@ -118,6 +118,7 @@
                     <tr>
                         <th style="width: 50px;" class="text-center">#</th>
                         <th>Nama Instansi</th>
+                        <th>NPWP</th>
                         <th>Alamat</th>
                         <th style="width: 130px;">No. Telp</th>
                         <th style="width: 200px;">Email</th>
@@ -130,6 +131,7 @@
                     <tr>
                         <td class="text-center text-muted">{{ $index + 1 }}</td>
                         <td><strong>{{ $instansi->nama }}</strong></td>
+                        <td><small class="text-muted">{{ $instansi->npwp ?? '-' }}</small></td>
                         <td><small class="text-muted">{{ $instansi->alamat ?? '-' }}</small></td>
                         <td><small>{{ $instansi->no_telp ?? '-' }}</small></td>
                         <td><small>{{ $instansi->email ?? '-' }}</small></td>
@@ -176,13 +178,32 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="{{ route('instansi.store') }}" method="POST" id="addInstansiForm">
+            <form action="{{ route('instansi.store') }}" method="POST" id="addInstansiForm" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="nama" class="font-weight-bold">Nama Instansi <span class="text-danger">*</span></label>
                         <input type="text" class="form-control @error('nama') is-invalid @enderror" id="nama" name="nama" required placeholder="Contoh: Dinas Keuangan">
                         @error('nama')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="nama_pemerintah" class="font-weight-bold">Nama Pemerintah Daerah</label>
+                        <input type="text" class="form-control @error('nama_pemerintah') is-invalid @enderror" id="nama_pemerintah" name="nama_pemerintah" placeholder="Contoh: PEMERINTAH KABUPATEN DOMPU">
+                        <small class="text-muted">Tampil di kop kuitansi di atas nama instansi</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="npwp" class="font-weight-bold">NPWP Instansi <small class="text-muted">(untuk XML BuPot)</small></label>
+                        <input type="text" class="form-control @error('npwp') is-invalid @enderror" id="npwp" name="npwp" placeholder="16 digit tanpa tanda baca, contoh: 0002928463912000" maxlength="20">
+                        @error('npwp')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="logo" class="font-weight-bold">Logo Instansi <small class="text-muted">(JPG/PNG/GIF, maks 2MB)</small></label>
+                        <input type="file" class="form-control-file @error('logo') is-invalid @enderror" id="logo" name="logo" accept="image/*">
+                        @error('logo')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -254,13 +275,31 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="" method="POST" id="editInstansiForm">
+            <form action="" method="POST" id="editInstansiForm" enctype="multipart/form-data">
                 @csrf
                 @method('PATCH')
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="edit_nama" class="font-weight-bold">Nama Instansi <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="edit_nama" name="nama" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_nama_pemerintah" class="font-weight-bold">Nama Pemerintah Daerah</label>
+                        <input type="text" class="form-control" id="edit_nama_pemerintah" name="nama_pemerintah" placeholder="Contoh: PEMERINTAH KABUPATEN DOMPU">
+                        <small class="text-muted">Tampil di kop kuitansi di atas nama instansi</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_npwp" class="font-weight-bold">NPWP Instansi <small class="text-muted">(untuk XML BuPot)</small></label>
+                        <input type="text" class="form-control" id="edit_npwp" name="npwp" placeholder="16 digit tanpa tanda baca, contoh: 0002928463912000" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Logo Instansi <small class="text-muted">(JPG/PNG/GIF, maks 2MB)</small></label>
+                        <div id="edit_logo_preview" class="mb-2" style="display:none;">
+                            <img id="edit_logo_img" src="" alt="Logo" style="max-height:60px;border:1px solid #ddd;border-radius:6px;padding:4px;">
+                            <small class="text-muted ml-2">Logo saat ini</small>
+                        </div>
+                        <input type="file" class="form-control-file" id="edit_logo" name="logo" accept="image/*">
+                        <small class="text-muted">Biarkan kosong jika tidak ingin mengganti logo</small>
                     </div>
                     <div class="form-group">
                         <label for="edit_alamat" class="font-weight-bold">Alamat</label>
@@ -313,10 +352,19 @@
     function editInstansi(instansi) {
         document.getElementById('editInstansiForm').action = '{{ route("instansi.update", ":id") }}'.replace(':id', instansi.id);
         document.getElementById('edit_nama').value = instansi.nama;
+        document.getElementById('edit_nama_pemerintah').value = instansi.nama_pemerintah || '';
+        document.getElementById('edit_npwp').value = instansi.npwp || '';
         document.getElementById('edit_alamat').value = instansi.alamat || '';
         document.getElementById('edit_no_telp').value = instansi.no_telp || '';
         document.getElementById('edit_email').value = instansi.email || '';
         document.getElementById('edit_website').value = instansi.website || '';
+        // Show current logo preview
+        if (instansi.logo) {
+            document.getElementById('edit_logo_img').src = '/images/logos/' + instansi.logo;
+            document.getElementById('edit_logo_preview').style.display = 'block';
+        } else {
+            document.getElementById('edit_logo_preview').style.display = 'none';
+        }
         $('#editInstansiModal').modal('show');
     }
 
@@ -350,8 +398,8 @@
                 responsive: true,
                 autoWidth: false,
                 columnDefs: [
-                    { orderable: false, targets: [6] },
-                    { searchable: false, targets: [0, 6] }
+                    { orderable: false, targets: [7] },
+                    { searchable: false, targets: [0, 7] }
                 ],
                 language: {
                     processing: "Memproses...",

@@ -23,8 +23,14 @@ class RekananController extends Controller
      */
     public function store(Request $request)
     {
+        $instansi = auth()->user()->instansi;
         $validated = $request->validate([
-            'npwp' => 'required|string|max:20|unique:rekanans,npwp',
+            'npwp' => [
+                'nullable',
+                'string',
+                'max:20',
+                \Illuminate\Validation\Rule::unique('rekanans', 'npwp')->where('instansi', $instansi)->whereNotNull('npwp'),
+            ],
             'nama_perusahaan' => 'required|string|max:255',
             'nomor_rekening' => 'required|string|max:255',
             'bank' => 'required|string|max:255',
@@ -32,7 +38,10 @@ class RekananController extends Controller
         ]);
 
         // Auto-assign instansi dari user yang sedang login
-        $validated['instansi'] = auth()->user()->instansi;
+        $validated['instansi'] = $instansi;
+        if (empty($validated['npwp'])) {
+            $validated['npwp'] = null;
+        }
 
         Rekanan::create($validated);
 
@@ -44,8 +53,14 @@ class RekananController extends Controller
      */
     public function update(Request $request, Rekanan $rekanan)
     {
+        $instansi = $rekanan->instansi ?? auth()->user()->instansi;
         $validated = $request->validate([
-            'npwp' => 'required|string|max:20|unique:rekanans,npwp,' . $rekanan->id,
+            'npwp' => [
+                'nullable',
+                'string',
+                'max:20',
+                \Illuminate\Validation\Rule::unique('rekanans', 'npwp')->where('instansi', $instansi)->whereNotNull('npwp')->ignore($rekanan->id),
+            ],
             'nama_perusahaan' => 'required|string|max:255',
             'nomor_rekening' => 'required|string|max:255',
             'bank' => 'required|string|max:255',

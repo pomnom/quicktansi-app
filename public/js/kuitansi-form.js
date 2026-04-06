@@ -328,7 +328,7 @@ function calculateTotalAkhir() {
     }
 
     // Total Akhir = DPP + PPN - PPH
-    const totalAkhir = dpp + ppn - pph;
+    const totalAkhir = dpp + ppn + pph;
 
     const totalField = document.getElementById("total_akhir_display");
     if (totalField) {
@@ -350,7 +350,7 @@ function calculateEditTotalAkhir() {
     }
 
     // Total Akhir = DPP + PPN - PPH
-    const totalAkhir = dpp + ppn - pph;
+    const totalAkhir = dpp + ppn + pph;
 
     const totalField = document.getElementById("edit_total_akhir_display");
     if (totalField) {

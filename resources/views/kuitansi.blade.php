@@ -385,15 +385,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="periode_lengkap" class="font-weight-bold small">Periode <span class="text-danger">*</span></label>
-                                <select class="form-control" id="periode_lengkap" name="periode_lengkap" required>
-                                    <option value="">-- Pilih Periode --</option>
-                                    @php $periodes = ['TU', 'GU']; @endphp
-                                    @foreach($periodes as $tipe)
-                                        @for($i = 1; $i <= 10; $i++)
-                                            <option value="{{ $tipe }}-{{ $i }}">{{ $tipe }} {{ $i }}</option>
-                                        @endfor
-                                    @endforeach
-                                </select>
+                                <input type="text" class="form-control" id="periode_lengkap" name="periode_lengkap" placeholder="Contoh: TU-1 atau UP 1" required>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -426,7 +418,7 @@
 
                     <div class="form-group">
                         <label for="untuk_pembayaran" class="font-weight-bold small">Untuk Pembayaran <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="untuk_pembayaran" name="untuk_pembayaran" rows="3" placeholder="Jelaskan tujuan pembayaran, misal: Pembayaran pengadaan ATK bulan Maret..." required></textarea>
+                        <input type="text" class="form-control" id="untuk_pembayaran" name="untuk_pembayaran" placeholder="Jelaskan tujuan pembayaran, misal: Pembayaran pengadaan ATK bulan Maret..." required>
                     </div>
 
                     <hr class="my-3">
@@ -531,7 +523,7 @@
                         <div class="p-3 rounded d-flex align-items-center justify-content-between" style="background:#e8f4f8;border:2px solid #4e73df;">
                             <div>
                                 <span class="font-weight-bold text-primary" style="font-size:14px;"><i class="fas fa-calculator mr-1"></i>Total Akhir</span><br>
-                                <small class="text-muted">DPP + PPN − PPH</small>
+                                <small class="text-muted">DPP + PPN + PPH</small>
                             </div>
                             <input type="text" id="total_akhir_display" value="Rp 0" readonly
                                 style="border:none;background:transparent;font-size:22px;font-weight:800;color:#4e73df;text-align:right;width:55%;padding:0;box-shadow:none;">
@@ -620,15 +612,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="edit_periode_lengkap" class="font-weight-bold small">Periode <span class="text-danger">*</span></label>
-                                <select class="form-control" id="edit_periode_lengkap" name="periode_lengkap" required>
-                                    <option value="">-- Pilih Periode --</option>
-                                    @php $periodes = ['TU', 'GU']; @endphp
-                                    @foreach($periodes as $tipe)
-                                        @for($i = 1; $i <= 10; $i++)
-                                            <option value="{{ $tipe }}-{{ $i }}">{{ $tipe }} {{ $i }}</option>
-                                        @endfor
-                                    @endforeach
-                                </select>
+                                <input type="text" class="form-control" id="edit_periode_lengkap" name="periode_lengkap" placeholder="Contoh: TU-1 atau UP 1" required>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -661,7 +645,7 @@
 
                     <div class="form-group">
                         <label for="edit_untuk_pembayaran" class="font-weight-bold small">Untuk Pembayaran <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="edit_untuk_pembayaran" name="untuk_pembayaran" rows="3" placeholder="Jelaskan tujuan pembayaran..." required></textarea>
+                        <input type="text" class="form-control" id="edit_untuk_pembayaran" name="untuk_pembayaran" placeholder="Jelaskan tujuan pembayaran..." required>
                     </div>
 
                     <hr class="my-3">
@@ -766,7 +750,7 @@
                         <div class="p-3 rounded d-flex align-items-center justify-content-between" style="background:#e8f4f8;border:2px solid #4e73df;">
                             <div>
                                 <span class="font-weight-bold text-primary" style="font-size:14px;"><i class="fas fa-calculator mr-1"></i>Total Akhir</span><br>
-                                <small class="text-muted">DPP + PPN − PPH</small>
+                                <small class="text-muted">DPP + PPN + PPH</small>
                             </div>
                             <input type="text" id="edit_total_akhir_display" value="Rp 0" readonly
                                 style="border:none;background:transparent;font-size:22px;font-weight:800;color:#4e73df;text-align:right;width:55%;padding:0;box-shadow:none;">
@@ -988,12 +972,14 @@
                 body: formData
             })
             .then(response => {
-                const contentType = response.headers.get('Content-Type') || '';
-                if (!response.ok || contentType.includes('text/html')) {
-                    return response.text().then(text => {
-                        // Try to extract flash error from redirected HTML
-                        const match = text.match(/alert-danger[^>]*>\s*([^<]+)/);
-                        throw new Error(match ? match[1].trim() : 'Tidak ada kuitansi yang memenuhi syarat BuPot (DPP ≥ 2.000.000 dan kode objek pajak lengkap).');
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error ?? 'Terjadi kesalahan saat membuat XML.');
+                    }).catch(jsonErr => {
+                        if (jsonErr.message !== 'Terjadi kesalahan saat membuat XML.' && jsonErr.constructor.name !== 'SyntaxError') {
+                            throw jsonErr;
+                        }
+                        throw new Error('Terjadi kesalahan: HTTP ' + response.status);
                     });
                 }
                 return response.blob();

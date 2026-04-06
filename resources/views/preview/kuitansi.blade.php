@@ -83,6 +83,28 @@
     <div class="preview-container">
         <div class="preview-page" id="previewPage">
             <div class="document-content">
+
+    <!-- KOP SURAT -->
+    <div class="kop-surat">
+        @if($instansiData?->logo)
+        <div class="kop-logo">
+            <img src="{{ asset('images/logos/' . $instansiData->logo) }}" alt="Logo" style="max-height:80px;max-width:80px;object-fit:contain;">
+        </div>
+        @else
+        <div class="kop-logo" style="width:80px;"></div>
+        @endif
+        <div class="kop-text">
+            @if($instansiData?->nama_pemerintah)
+            <div class="kop-pemerintah">{{ strtoupper($instansiData->nama_pemerintah) }}</div>
+            @endif
+            <div class="kop-instansi">{{ strtoupper($instansiData?->nama ?? $kuitansi->instansi ?? '') }}</div>
+            @if($instansiData?->alamat)
+            <div class="kop-alamat">{{ $instansiData->alamat }}</div>
+            @endif
+        </div>
+    </div>
+    <div class="kop-divider"></div>
+
     <!-- Document Header: left stamp + right info table -->
     <div class="doc-header">
         <div class="doc-header-left">UNTUK PEMERINTAH</div>

@@ -157,8 +157,8 @@
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="npwp">NPWP <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('npwp') is-invalid @enderror" id="npwp" name="npwp" required placeholder="00.000.000.0-000.000">
+                        <label for="npwp">NPWP <small class="text-muted">(opsional)</small></label>
+                        <input type="text" class="form-control @error('npwp') is-invalid @enderror" id="npwp" name="npwp" placeholder="00.000.000.0-000.000">
                         @error('npwp')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -218,8 +218,8 @@
                 @method('PUT')
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="edit_npwp">NPWP <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_npwp" name="npwp" required>
+                        <label for="edit_npwp">NPWP <small class="text-muted">(opsional)</small></label>
+                        <input type="text" class="form-control" id="edit_npwp" name="npwp">
                     </div>
                     <div class="form-group">
                         <label for="edit_nama_perusahaan">Nama Perusahaan <span class="text-danger">*</span></label>

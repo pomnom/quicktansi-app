@@ -17,7 +17,7 @@ class KuitansiController extends Controller
     {
         // Filter data berdasarkan instansi user yang sedang login
         $userInstansi = auth()->user()->instansi;
-        
+
         $kuitansis = Kuitansi::with('rekanan')->where('instansi', $userInstansi)->get();
         $rekanans = Rekanan::where('instansi', $userInstansi)->get();
         $pptks = Staff::where('status', 'PPTK')->where('instansi', $userInstansi)->get();
@@ -29,7 +29,7 @@ class KuitansiController extends Controller
     public function getNextPeriodeNumber(Request $request)
     {
         $periodeType = $request->query('periode_type');
-        
+
         if (!in_array($periodeType, ['TU', 'GU'])) {
             return response()->json(['error' => 'Invalid periode type'], 400);
         }
@@ -63,9 +63,13 @@ class KuitansiController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'periode_lengkap' => strtoupper($request->periode_lengkap),
+        ]);
+
         $request->validate([
             'nomor_rekening' => 'required|string|max:255',
-            'periode_lengkap' => ['required', 'string', 'regex:/^(TU|GU)-\d+$/'],
+            'periode_lengkap' => 'required|string|max:50',
             'nomor_urut' => 'required|string|max:3',
             'rekanan_id' => 'required|exists:rekanans,id',
             'tanggal_kuitansi' => 'required|date',
@@ -75,24 +79,27 @@ class KuitansiController extends Controller
             'pptk_1_id' => 'required|exists:staff,id',
         ]);
 
-        // Parse periode_lengkap format "TU-1" into type and number
-        list($periodeType, $periodeNumber) = explode('-', $request->periode_lengkap);
-        $periodeNumber = (int) $periodeNumber;
+        // Parse periode_lengkap (supports "TU-1" or "UP 1" format)
+        $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
+        $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
+        $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
         $nomorUrut = (int) $request->nomor_urut;
 
         $rekanan = Rekanan::findOrFail($request->rekanan_id);
-        
+
         $rincianItem = null;
         if ($request->rincian_item_json) {
             $rincianItem = json_decode($request->rincian_item_json, true);
         }
 
         // Calculate DPP total, DPP Barang (non-jasa), DPP Jasa
-        $dpp = 0; $dppBarang = 0; $dppJasa = 0;
+        $dpp = 0;
+        $dppBarang = 0;
+        $dppJasa = 0;
         if (is_array($rincianItem)) {
             foreach ($rincianItem as $item) {
-                $jumlah = (int)($item['jumlah'] ?? 0);
-                $harga  = (float)($item['harga_satuan'] ?? 0);
+                $jumlah = (int) ($item['jumlah'] ?? 0);
+                $harga = (float) ($item['harga_satuan'] ?? 0);
                 $subtotal = $jumlah * $harga;
                 $dpp += $subtotal;
                 if (!empty($item['is_jasa'])) {
@@ -102,9 +109,9 @@ class KuitansiController extends Controller
                 }
             }
         }
-        $dpp      = (int) round($dpp);
+        $dpp = (int) round($dpp);
         $dppBarang = (int) round($dppBarang);
-        $dppJasa   = (int) round($dppJasa);
+        $dppJasa = (int) round($dppJasa);
 
         // Calculate PPN (jika checkbox ppn_checkbox dicentang)
         $ppnAmount = 0;
@@ -129,20 +136,24 @@ class KuitansiController extends Controller
         $pphAmount = $pph22Amount + $pph23Amount;
 
         // Derive jenis_pph
-        if ($pph22Amount > 0 && $pph23Amount > 0) $jenisPph = '22,23';
-        elseif ($pph22Amount > 0) $jenisPph = '22';
-        elseif ($pph23Amount > 0) $jenisPph = '23';
-        else $jenisPph = '';
+        if ($pph22Amount > 0 && $pph23Amount > 0)
+            $jenisPph = '22,23';
+        elseif ($pph22Amount > 0)
+            $jenisPph = '22';
+        elseif ($pph23Amount > 0)
+            $jenisPph = '23';
+        else
+            $jenisPph = '';
 
         // Total Akhir = DPP + PPN - PPH
         $totalAkhir = $dpp + $ppnAmount - $pphAmount;
-        
+
         // Get staff for snapshot (filter by instansi)
         $userInstansi = auth()->user()->instansi;
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $userInstansi)->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $userInstansi)->first();
         $pptk = Staff::findOrFail($request->pptk_1_id);
-        
+
         // Handle nama_bendahara_barang from form input (if provided)
         $namaBendaharaBarang = null;
         $nipBendaharaBarang = null;
@@ -150,9 +161,9 @@ class KuitansiController extends Controller
             $namaBendaharaBarang = $request->nama_bendahara_barang;
             $nipBendaharaBarang = $request->nip_bendahara_barang;
         }
-        
+
         $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
-        
+
         Kuitansi::create([
             'nomor_rekening' => $request->nomor_rekening,
             'periode_type' => $periodeType,
@@ -200,9 +211,13 @@ class KuitansiController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $request->merge([
+            'periode_lengkap' => strtoupper($request->periode_lengkap),
+        ]);
+
         $request->validate([
             'nomor_rekening' => 'required|string|max:255',
-            'periode_lengkap' => ['required', 'string', 'regex:/^(TU|GU)-\d+$/'],
+            'periode_lengkap' => 'required|string|max:50',
             'nomor_urut' => 'required|string|max:3',
             'rekanan_id' => 'required|exists:rekanans,id',
             'tanggal_kuitansi' => 'required|date',
@@ -213,25 +228,28 @@ class KuitansiController extends Controller
             'pptk_1_id' => 'required|exists:staff,id',
         ]);
 
-        // Parse periode_lengkap format "TU-1" into type and number
-        list($periodeType, $periodeNumber) = explode('-', $request->periode_lengkap);
-        $periodeNumber = (int) $periodeNumber;
+        // Parse periode_lengkap (supports "TU-1" or "UP 1" format)
+        $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
+        $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
+        $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
         $nomorUrut = (int) $request->nomor_urut;
 
         $kuitansi = Kuitansi::findOrFail($id);
         $rekanan = Rekanan::findOrFail($request->rekanan_id);
-        
+
         $rincianItem = null;
         if ($request->rincian_item_json) {
             $rincianItem = json_decode($request->rincian_item_json, true);
         }
 
         // Calculate DPP total, DPP Barang (non-jasa), DPP Jasa
-        $dpp = 0; $dppBarang = 0; $dppJasa = 0;
+        $dpp = 0;
+        $dppBarang = 0;
+        $dppJasa = 0;
         if (is_array($rincianItem)) {
             foreach ($rincianItem as $item) {
-                $jumlah = (int)($item['jumlah'] ?? 0);
-                $harga  = (float)($item['harga_satuan'] ?? 0);
+                $jumlah = (int) ($item['jumlah'] ?? 0);
+                $harga = (float) ($item['harga_satuan'] ?? 0);
                 $subtotal = $jumlah * $harga;
                 $dpp += $subtotal;
                 if (!empty($item['is_jasa'])) {
@@ -241,9 +259,9 @@ class KuitansiController extends Controller
                 }
             }
         }
-        $dpp      = (int) round($dpp);
+        $dpp = (int) round($dpp);
         $dppBarang = (int) round($dppBarang);
-        $dppJasa   = (int) round($dppJasa);
+        $dppJasa = (int) round($dppJasa);
 
         // Calculate PPN (jika checkbox ppn_checkbox dicentang)
         $ppnAmount = 0;
@@ -268,20 +286,24 @@ class KuitansiController extends Controller
         $pphAmount = $pph22Amount + $pph23Amount;
 
         // Derive jenis_pph
-        if ($pph22Amount > 0 && $pph23Amount > 0) $jenisPph = '22,23';
-        elseif ($pph22Amount > 0) $jenisPph = '22';
-        elseif ($pph23Amount > 0) $jenisPph = '23';
-        else $jenisPph = '';
-        
+        if ($pph22Amount > 0 && $pph23Amount > 0)
+            $jenisPph = '22,23';
+        elseif ($pph22Amount > 0)
+            $jenisPph = '22';
+        elseif ($pph23Amount > 0)
+            $jenisPph = '23';
+        else
+            $jenisPph = '';
+
         // Total Akhir = DPP + PPN - PPH
         $totalAkhir = $dpp + $ppnAmount - $pphAmount;
-        
+
         // Get staff for snapshot (filter by instansi)
         $userInstansi = auth()->user()->instansi;
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $userInstansi)->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $userInstansi)->first();
         $pptk = Staff::findOrFail($request->pptk_1_id);
-        
+
         // Handle nama_bendahara_barang from form input (if provided)
         $namaBendaharaBarang = null;
         $nipBendaharaBarang = null;
@@ -289,10 +311,10 @@ class KuitansiController extends Controller
             $namaBendaharaBarang = $request->nama_bendahara_barang;
             $nipBendaharaBarang = $request->nip_bendahara_barang;
         }
-        
+
         // Generate noBuku dengan periode dan nomor_urut yang baru diinput
         $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
-        
+
         $kuitansi->update([
             'nomor_rekening' => $request->nomor_rekening,
             'periode_type' => $periodeType,
@@ -339,16 +361,19 @@ class KuitansiController extends Controller
 
         return redirect()->route('kuitansi.index')->with('success', 'kuitansi berhasil dihapus.');
     }
-    
+
     public function preview(string $id)
     {
         $kuitansi = Kuitansi::with(['rekanan', 'pptk'])->findOrFail($id);
-        
+
         // Get fixed staff
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->first();
-        
-        return view('preview.kuitansi', compact('kuitansi', 'penggunaAnggaran', 'bendaharaPengeluaran'));
+
+        // Get instansi data for kop
+        $instansiData = \App\Models\Instansi::where('nama', $kuitansi->instansi)->first();
+
+        return view('preview.kuitansi', compact('kuitansi', 'penggunaAnggaran', 'bendaharaPengeluaran', 'instansiData'));
     }
 
     // API endpoints for cascading selects
@@ -358,32 +383,32 @@ class KuitansiController extends Controller
             ->distinct()
             ->orderBy('kode')
             ->get();
-        
+
         return response()->json($kegiatan);
     }
 
     public function getSubKegiatan(Request $request)
     {
         $idGiat = $request->query('id_giat') ?? $request->query('id');
-        
+
         $subKegiatan = SubKegiatan::selectRaw('id_sub_giat as id, id_sub_giat, id_giat, kode_sub_giat as kode, kode_sub_giat, nama_sub_giat as nama, nama_sub_giat')
             ->where('id_giat', $idGiat)
             ->distinct()
             ->orderBy('kode')
             ->get();
-        
+
         return response()->json($subKegiatan);
     }
 
     public function getKodeRekening(Request $request)
     {
         $idSubGiat = $request->query('id_sub_giat') ?? $request->query('id');
-        
+
         $kodeRekening = KodeRekening::selectRaw('id_akun as id, id_akun, id_sub_giat, kode_akun as kode, kode_akun, nama_akun as nama, nama_akun')
             ->where('id_sub_giat', $idSubGiat)
             ->orderBy('kode')
             ->get();
-        
+
         return response()->json($kodeRekening);
     }
 
@@ -404,29 +429,39 @@ class KuitansiController extends Controller
     {
         $bulan = $request->query('bulan', date('n')); // Default bulan sekarang
         $tahun = $request->query('tahun', date('Y')); // Default tahun sekarang
-        
+
         // Ambil data kuitansi berdasarkan bulan dan tahun dari tanggal_pemotongan
-        // Hanya yang belanja >= 2M dan punya data BuPot lengkap
+        // Punya kode_objek_pajak (PPh 22) ATAU kode_objek_pajak_23 (PPh 23)
         $kuitansis = Kuitansi::with('rekanan')
-            ->whereNotNull('kode_objek_pajak')
+            ->where(function ($q) {
+                $q->whereNotNull('kode_objek_pajak')
+                    ->orWhereNotNull('kode_objek_pajak_23');
+            })
             ->whereNotNull('dpp')
+            ->where('dpp', '>', 0)
             ->whereYear('tanggal_pemotongan', $tahun)
             ->whereMonth('tanggal_pemotongan', $bulan)
-            ->where('dpp', '>=', 2000000) // Hanya belanja >= 2M
             ->orderBy('tanggal_pemotongan')
             ->get();
 
         if ($kuitansis->isEmpty()) {
-            return back()->with('error', 'Tidak ada data kuitansi dengan belanja ≥ 2.000.000 untuk periode tersebut. Hanya kuitansi dengan belanja ≥ 2.000.000 yang perlu dibuatkan BuPot.');
+            return back()->with('error', 'Tidak ada data kuitansi dengan data BuPot lengkap untuk periode tersebut.');
         }
 
-        // NPWP Pemotong - ambil dari config atau database
-        $npwpPemotong = env('NPWP_INSTANSI', '0002928463912000');
+        // NPWP Pemotong - ambil dari instansi user yang login
+        $userInstansi = auth()->user()->instansi;
+        $instansiData = \App\Models\Instansi::where('nama', $userInstansi)->first();
+        $npwpPemotong = $instansiData?->npwp ?? '';
+
+        if (empty($npwpPemotong)) {
+            return back()->with('error', 'NPWP instansi belum diisi. Silakan lengkapi NPWP instansi terlebih dahulu di menu Instansi.');
+        }
+
         $idTkuPemotong = $npwpPemotong . '000000';
 
         // Build XML menggunakan SimpleXMLElement
         $xmlObj = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><BpuBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"></BpuBulk>');
-        
+
         $xmlObj->addChild('TIN', $npwpPemotong);
         $listOfBpu = $xmlObj->addChild('ListOfBpu');
 
@@ -436,17 +471,19 @@ class KuitansiController extends Controller
             $bpu->addChild('TaxPeriodYear', $tahun);
             $bpu->addChild('CounterpartTin', $kuitansi->rekanan?->npwp ?? '9990000000999000');
             $bpu->addChild('IDPlaceOfBusinessActivityOfIncomeRecipient', ($kuitansi->rekanan?->npwp ?? '9990000000999000') . '000000');
+            $kodeObjekPajak = $kuitansi->kode_objek_pajak ?? $kuitansi->kode_objek_pajak_23;
+            $tarifPajak = $kuitansi->tarif_pajak ?? $kuitansi->tarif_pajak_23;
             $bpu->addChild('TaxCertificate', 'N/A');
-            $bpu->addChild('TaxObjectCode', $kuitansi->kode_objek_pajak);
+            $bpu->addChild('TaxObjectCode', $kodeObjekPajak);
             $bpu->addChild('TaxBase', number_format($kuitansi->dpp, 0, '', ''));
-            $bpu->addChild('Rate', $kuitansi->tarif_pajak);
+            $bpu->addChild('Rate', $tarifPajak);
             $bpu->addChild('Document', $kuitansi->jenis_dokumen);
             $bpu->addChild('DocumentNumber', $kuitansi->nomor_urut . '/' . $kuitansi->periode_type . ' ' . $kuitansi->periode_number);
             $bpu->addChild('DocumentDate', \Carbon\Carbon::parse($kuitansi->tanggal_kuitansi)->format('Y-m-d'));
             $bpu->addChild('IDPlaceOfBusinessActivity', $idTkuPemotong);
             $bpu->addChild('GovTreasurerOpt', 'N/A');
             $sp2d = $bpu->addChild('SP2DNumber');
-            $sp2d->addAttribute('xsi:nil', 'true');
+            $sp2d->addAttribute('xsi:nil', 'true', 'http://www.w3.org/2001/XMLSchema-instance');
             $bpu->addChild('WithholdingDate', \Carbon\Carbon::parse($kuitansi->tanggal_pemotongan)->format('Y-m-d'));
         }
 
@@ -463,7 +500,7 @@ class KuitansiController extends Controller
         $kuitansiIds = json_decode($request->input('kuitansi_ids'), true);
 
         if (!is_array($kuitansiIds) || empty($kuitansiIds)) {
-            return back()->with('error', 'Pilih minimal 1 kuitansi untuk export XML.');
+            return response()->json(['error' => 'Pilih minimal 1 kuitansi untuk export XML.'], 422);
         }
 
         // Ambil semua kuitansi yang dipilih
@@ -472,24 +509,30 @@ class KuitansiController extends Controller
             ->orderBy('tanggal_pemotongan')
             ->get();
 
-        // Filter hanya yang punya belanja >= 2M dan kode_objek_pajak + dpp lengkap
-        $validKuitansis = $allSelected->filter(function($k) {
-            $dpp = (int)$k->dpp;
-            // Hanya include jika belanja >= 2M dan punya data BuPot lengkap
-            return $dpp >= 2000000 && !is_null($k->kode_objek_pajak) && !is_null($k->dpp);
+        // Filter hanya yang punya kode_objek_pajak (PPh 22) ATAU kode_objek_pajak_23 (PPh 23), dan dpp > 0
+        $validKuitansis = $allSelected->filter(function ($k) {
+            $hasKode = !is_null($k->kode_objek_pajak) || !is_null($k->kode_objek_pajak_23);
+            return $hasKode && !is_null($k->dpp) && (int) $k->dpp > 0;
         })->values();
 
         if ($validKuitansis->isEmpty()) {
-            return back()->with('error', 'Tidak ada kuitansi dengan belanja ≥ 2.000.000 dan data BuPot lengkap di antara pilihan Anda. Hanya kuitansi dengan belanja ≥ 2.000.000 yang perlu dibuatkan BuPot.');
+            return response()->json(['error' => 'Tidak ada kuitansi dengan data BuPot lengkap di antara pilihan Anda. Pastikan kode objek pajak dan DPP sudah terisi.'], 422);
         }
 
-        // NPWP Pemotong - ambil dari config atau database
-        $npwpPemotong = env('NPWP_INSTANSI', '0002928463912000');
+        // NPWP Pemotong - ambil dari instansi user yang login
+        $userInstansi = auth()->user()->instansi;
+        $instansiData = \App\Models\Instansi::where('nama', $userInstansi)->first();
+        $npwpPemotong = $instansiData?->npwp ?? '';
+
+        if (empty($npwpPemotong)) {
+            return response()->json(['error' => 'NPWP instansi belum diisi. Silakan lengkapi NPWP instansi terlebih dahulu di menu Instansi.'], 422);
+        }
+
         $idTkuPemotong = $npwpPemotong . '000000';
 
         // Build XML menggunakan SimpleXMLElement
         $xmlObj = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><BpuBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"></BpuBulk>');
-        
+
         $xmlObj->addChild('TIN', $npwpPemotong);
         $listOfBpu = $xmlObj->addChild('ListOfBpu');
 
@@ -499,17 +542,19 @@ class KuitansiController extends Controller
             $bpu->addChild('TaxPeriodYear', date('Y', strtotime($kuitansi->tanggal_pemotongan)));
             $bpu->addChild('CounterpartTin', $kuitansi->rekanan?->npwp ?? '9990000000999000');
             $bpu->addChild('IDPlaceOfBusinessActivityOfIncomeRecipient', ($kuitansi->rekanan?->npwp ?? '9990000000999000') . '000000');
+            $kodeObjekPajak = $kuitansi->kode_objek_pajak ?? $kuitansi->kode_objek_pajak_23;
+            $tarifPajak = $kuitansi->tarif_pajak ?? $kuitansi->tarif_pajak_23;
             $bpu->addChild('TaxCertificate', 'N/A');
-            $bpu->addChild('TaxObjectCode', $kuitansi->kode_objek_pajak);
+            $bpu->addChild('TaxObjectCode', $kodeObjekPajak);
             $bpu->addChild('TaxBase', number_format($kuitansi->dpp, 0, '', ''));
-            $bpu->addChild('Rate', $kuitansi->tarif_pajak);
+            $bpu->addChild('Rate', $tarifPajak);
             $bpu->addChild('Document', $kuitansi->jenis_dokumen);
             $bpu->addChild('DocumentNumber', $kuitansi->nomor_urut . '/' . $kuitansi->periode_type . ' ' . $kuitansi->periode_number);
             $bpu->addChild('DocumentDate', \Carbon\Carbon::parse($kuitansi->tanggal_kuitansi)->format('Y-m-d'));
             $bpu->addChild('IDPlaceOfBusinessActivity', $idTkuPemotong);
             $bpu->addChild('GovTreasurerOpt', 'N/A');
             $sp2d = $bpu->addChild('SP2DNumber');
-            $sp2d->addAttribute('xsi:nil', 'true');
+            $sp2d->addAttribute('xsi:nil', 'true', 'http://www.w3.org/2001/XMLSchema-instance');
             $bpu->addChild('WithholdingDate', \Carbon\Carbon::parse($kuitansi->tanggal_pemotongan)->format('Y-m-d'));
         }
 
