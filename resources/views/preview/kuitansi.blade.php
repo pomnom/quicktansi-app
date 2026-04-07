@@ -163,7 +163,7 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th>Nama Barang/Jasa</th>
+                <th>Rincian</th>
                 <th width="80px" class="number">Jumlah</th>
                 <th width="100px" class="number">Harga Satuan</th>
                 <th width="100px" class="number">Total</th>
