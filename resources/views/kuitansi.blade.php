@@ -228,8 +228,13 @@
                             <input type="checkbox" class="kuitansi-checkbox" value="{{ $kuitansi->id }}" title="Pilih kuitansi ini">
                         </td>
                         <td>{{ $loop->iteration }}</td>
-                        <td data-search="{{ $kuitansi->no_buku }}">
-                            <span class="no-buku-badge">{{ $kuitansi->no_buku }}</span>
+                        @php
+                            $noBukuDisplay = $kuitansi->no_buku
+                                ?? (($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
+                                    . ' / ' . $kuitansi->periode_type . ' ' . $kuitansi->periode_number);
+                        @endphp
+                        <td data-search="{{ $kuitansi->no_buku ?? ($kuitansi->periode_type . ' ' . $kuitansi->periode_number) }}">
+                            <span class="no-buku-badge">{!! $noBukuDisplay !!}</span>
                         </td>
                         <td data-search="{{ $kuitansi->nomor_rekening }}">
                             <small class="text-muted">{{ $kuitansi->nomor_rekening }}</small>
