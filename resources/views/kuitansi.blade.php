@@ -384,14 +384,14 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="periode_lengkap" class="font-weight-bold small">Periode <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="periode_lengkap" name="periode_lengkap" placeholder="Contoh: TU-1 atau UP 1" required>
+                                <label for="periode_lengkap" class="font-weight-bold small">Periode</label>
+                                <input type="text" class="form-control" id="periode_lengkap" name="periode_lengkap" placeholder="Contoh: TU-1 atau UP 1">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="nomor_urut" class="font-weight-bold small">No. Urut Kuitansi <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="nomor_urut" name="nomor_urut" placeholder="001" maxlength="3" required>
+                                <label for="nomor_urut" class="font-weight-bold small">No. Urut Kuitansi</label>
+                                <input type="text" class="form-control" id="nomor_urut" name="nomor_urut" placeholder="001" maxlength="3">
                             </div>
                         </div>
                     </div>
@@ -609,14 +609,14 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_periode_lengkap" class="font-weight-bold small">Periode <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_periode_lengkap" name="periode_lengkap" placeholder="Contoh: TU-1 atau UP 1" required>
+                                <label for="edit_periode_lengkap" class="font-weight-bold small">Periode</label>
+                                <input type="text" class="form-control" id="edit_periode_lengkap" name="periode_lengkap" placeholder="Contoh: TU-1 atau UP 1">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_nomor_urut" class="font-weight-bold small">No. Urut Kuitansi <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_nomor_urut" name="nomor_urut" placeholder="001" maxlength="3" required>
+                                <label for="edit_nomor_urut" class="font-weight-bold small">No. Urut Kuitansi</label>
+                                <input type="text" class="form-control" id="edit_nomor_urut" name="nomor_urut" placeholder="001" maxlength="3">
                             </div>
                         </div>
                     </div>

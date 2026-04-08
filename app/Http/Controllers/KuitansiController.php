@@ -90,14 +90,16 @@ class KuitansiController extends Controller
 
     public function store(Request $request)
     {
-        $request->merge([
-            'periode_lengkap' => strtoupper($request->periode_lengkap),
-        ]);
+        if ($request->filled('periode_lengkap')) {
+            $request->merge([
+                'periode_lengkap' => strtoupper($request->periode_lengkap),
+            ]);
+        }
 
         $request->validate([
             'nomor_rekening' => 'required|string|max:255',
-            'periode_lengkap' => 'required|string|max:50',
-            'nomor_urut' => 'required|string|max:3',
+            'periode_lengkap' => 'nullable|string|max:50',
+            'nomor_urut' => 'nullable|string|max:3',
             'penerima_type' => 'required|in:rekanan,staff',
             'rekanan_id' => 'nullable|integer',
             'staff_id' => 'nullable|exists:staff,id',
@@ -116,10 +118,21 @@ class KuitansiController extends Controller
         }
 
         // Parse periode_lengkap (supports "TU-1" or "UP 1" format)
-        $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
-        $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
-        $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
-        $nomorUrut = (int) $request->nomor_urut;
+        $periodeType = null;
+        $periodeNumber = null;
+        $nomorUrut = null;
+        $noBuku = null;
+        if ($request->filled('periode_lengkap')) {
+            $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
+            $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
+            $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
+        }
+        if ($request->filled('nomor_urut')) {
+            $nomorUrut = (int) $request->nomor_urut;
+        }
+        if ($periodeType !== null && $nomorUrut !== null) {
+            $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
+        }
 
         $penerima = $this->resolvePenerima($request);
 
@@ -182,8 +195,8 @@ class KuitansiController extends Controller
         else
             $jenisPph = '';
 
-        // Total Akhir = DPP + PPN - PPH
-        $totalAkhir = $dpp + $ppnAmount - $pphAmount;
+        // Total Akhir = DPP + PPN + PPH
+        $totalAkhir = $dpp + $ppnAmount + $pphAmount;
 
         // Get staff for snapshot (filter by instansi)
         $userInstansi = auth()->user()->instansi;
@@ -198,8 +211,6 @@ class KuitansiController extends Controller
             $namaBendaharaBarang = $request->nama_bendahara_barang;
             $nipBendaharaBarang = $request->nip_bendahara_barang;
         }
-
-        $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
 
         Kuitansi::create([
             'nomor_rekening' => $request->nomor_rekening,
@@ -248,14 +259,16 @@ class KuitansiController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $request->merge([
-            'periode_lengkap' => strtoupper($request->periode_lengkap),
-        ]);
+        if ($request->filled('periode_lengkap')) {
+            $request->merge([
+                'periode_lengkap' => strtoupper($request->periode_lengkap),
+            ]);
+        }
 
         $request->validate([
             'nomor_rekening' => 'required|string|max:255',
-            'periode_lengkap' => 'required|string|max:50',
-            'nomor_urut' => 'required|string|max:3',
+            'periode_lengkap' => 'nullable|string|max:50',
+            'nomor_urut' => 'nullable|string|max:3',
             'penerima_type' => 'required|in:rekanan,staff',
             'rekanan_id' => 'nullable|integer',
             'staff_id' => 'nullable|exists:staff,id',
@@ -275,10 +288,21 @@ class KuitansiController extends Controller
         }
 
         // Parse periode_lengkap (supports "TU-1" or "UP 1" format)
-        $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
-        $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
-        $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
-        $nomorUrut = (int) $request->nomor_urut;
+        $periodeType = null;
+        $periodeNumber = null;
+        $nomorUrut = null;
+        $noBuku = null;
+        if ($request->filled('periode_lengkap')) {
+            $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
+            $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
+            $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
+        }
+        if ($request->filled('nomor_urut')) {
+            $nomorUrut = (int) $request->nomor_urut;
+        }
+        if ($periodeType !== null && $nomorUrut !== null) {
+            $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
+        }
 
         $kuitansi = Kuitansi::findOrFail($id);
         $penerima = $this->resolvePenerima($request);
@@ -342,8 +366,8 @@ class KuitansiController extends Controller
         else
             $jenisPph = '';
 
-        // Total Akhir = DPP + PPN - PPH
-        $totalAkhir = $dpp + $ppnAmount - $pphAmount;
+        // Total Akhir = DPP + PPN + PPH
+        $totalAkhir = $dpp + $ppnAmount + $pphAmount;
 
         // Get staff for snapshot (filter by instansi)
         $userInstansi = auth()->user()->instansi;
@@ -358,9 +382,6 @@ class KuitansiController extends Controller
             $namaBendaharaBarang = $request->nama_bendahara_barang;
             $nipBendaharaBarang = $request->nip_bendahara_barang;
         }
-
-        // Generate noBuku dengan periode dan nomor_urut yang baru diinput
-        $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
 
         $kuitansi->update([
             'nomor_rekening' => $request->nomor_rekening,
