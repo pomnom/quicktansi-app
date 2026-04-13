@@ -195,8 +195,8 @@ class KuitansiController extends Controller
         else
             $jenisPph = '';
 
-        // Total Akhir = DPP + PPN + PPH
-        $totalAkhir = $dpp + $ppnAmount + $pphAmount;
+        // Total Akhir = DPP
+        $totalAkhir = $dpp;
 
         // Get staff for snapshot (filter by instansi)
         $userInstansi = auth()->user()->instansi;
@@ -366,8 +366,8 @@ class KuitansiController extends Controller
         else
             $jenisPph = '';
 
-        // Total Akhir = DPP + PPN + PPH
-        $totalAkhir = $dpp + $ppnAmount + $pphAmount;
+        // Total Akhir = DPP
+        $totalAkhir = $dpp;
 
         // Get staff for snapshot (filter by instansi)
         $userInstansi = auth()->user()->instansi;
