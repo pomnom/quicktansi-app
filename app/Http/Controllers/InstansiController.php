@@ -7,6 +7,17 @@ use Illuminate\Http\Request;
 
 class InstansiController extends Controller
 {
+    public function __construct()
+    {
+        // Hanya superadmin yang bisa mengakses instansi
+        $this->middleware(function ($request, $next) {
+            if (!auth()->user()?->is_superadmin) {
+                abort(403, 'Unauthorized - Hanya superadmin yang dapat mengelola instansi.');
+            }
+            return $next($request);
+        });
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -36,9 +47,19 @@ class InstansiController extends Controller
 
         if ($request->hasFile('logo')) {
             $file = $request->file('logo');
-            $filename = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('images/logos'), $filename);
-            $data['logo'] = $filename;
+            $filename = 'logo_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            try {
+                // Ensure directory exists
+                $uploadPath = public_path('images/logos');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0777, true);
+                }
+                $file->move($uploadPath, $filename);
+                $data['logo'] = $filename;
+            } catch (\Exception $e) {
+                \Log::error('Logo upload error: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Gagal upload logo: ' . $e->getMessage());
+            }
         }
 
         Instansi::create($data);
@@ -75,14 +96,23 @@ class InstansiController extends Controller
         $data = $request->only(['nama', 'nama_pemerintah', 'npwp', 'alamat', 'no_telp', 'email', 'website']);
 
         if ($request->hasFile('logo')) {
-            // Hapus logo lama jika ada
-            if ($instansi->logo && file_exists(public_path('images/logos/' . $instansi->logo))) {
-                unlink(public_path('images/logos/' . $instansi->logo));
+            try {
+                // Hapus logo lama jika ada
+                if ($instansi->logo && file_exists(public_path('images/logos/' . $instansi->logo))) {
+                    unlink(public_path('images/logos/' . $instansi->logo));
+                }
+                $file = $request->file('logo');
+                $filename = 'logo_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $uploadPath = public_path('images/logos');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0777, true);
+                }
+                $file->move($uploadPath, $filename);
+                $data['logo'] = $filename;
+            } catch (\Exception $e) {
+                \Log::error('Logo upload error: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Gagal upload logo: ' . $e->getMessage());
             }
-            $file = $request->file('logo');
-            $filename = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('images/logos'), $filename);
-            $data['logo'] = $filename;
         }
 
         $instansi->update($data);

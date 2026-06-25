@@ -229,9 +229,9 @@
                         </td>
                         <td>{{ $loop->iteration }}</td>
                         @php
-                            $noBukuDisplay = $kuitansi->no_buku
-                                ?? (($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
-                                    . ' / ' . $kuitansi->periode_type . ' ' . $kuitansi->periode_number);
+                            $noBukuDisplay = ($kuitansi->no_buku && $kuitansi->no_buku !== 'null')
+                                ? $kuitansi->no_buku
+                                : ($kuitansi->periode_type . ' ' . $kuitansi->periode_number . ' / ' . ($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'));
                         @endphp
                         <td data-search="{{ $kuitansi->no_buku ?? ($kuitansi->periode_type . ' ' . $kuitansi->periode_number) }}">
                             <span class="no-buku-badge">{!! $noBukuDisplay !!}</span>

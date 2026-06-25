@@ -56,7 +56,8 @@
             <span>Staff</span></a>
     </li>
 
-    <!-- Nav Item - Instansi -->
+    <!-- Nav Item - Instansi (Hanya untuk Superadmin) -->
+    @if(auth()->user()->is_superadmin)
     <li class="nav-item {{ request()->routeIs('instansi.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('instansi.index') }}">
             <i class="fas fa-fw fa-building"></i>
@@ -68,8 +69,8 @@
             <i class="fas fa-fw fa-sitemap"></i>
             <span>Master Rekening</span></a>
     </li>
+    @endif
 
-    @if(auth()->user()->is_superadmin)
     <!-- Divider -->
     <hr class="sidebar-divider">
 
@@ -79,6 +80,7 @@
     </div>
 
     <!-- Nav Item - User Management -->
+    @if(auth()->user()->is_superadmin)
     <li class="nav-item {{ request()->routeIs('user.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('user.index') }}">
             <i class="fas fa-fw fa-users-cog"></i>

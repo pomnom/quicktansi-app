@@ -10,6 +10,17 @@ use Illuminate\Http\Request;
 
 class MasterRekeningController extends Controller
 {
+    public function __construct()
+    {
+        // Hanya superadmin yang bisa mengakses master rekening
+        $this->middleware(function ($request, $next) {
+            if (!auth()->user()?->is_superadmin) {
+                abort(403, 'Unauthorized - Hanya superadmin yang dapat mengelola master rekening.');
+            }
+            return $next($request);
+        });
+    }
+
     public function index()
     {
         $user = auth()->user();
