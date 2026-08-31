@@ -1628,7 +1628,7 @@
     // ═══════════════════════════════════════════════════════════════════════
 
     // Get recent "untuk_pembayaran" values from PHP and clean them
-    let recentPembayaran = @json(\DB::table('kuitansis')->distinct()->orderBy('created_at', 'desc')->limit(50)->pluck('untuk_pembayaran')->toArray());
+    let recentPembayaran = @json(\DB::table('kuitansis')->select('untuk_pembayaran', \DB::raw('MAX(created_at) as last_used'))->whereNotNull('untuk_pembayaran')->groupBy('untuk_pembayaran')->orderBy('last_used', 'desc')->limit(50)->pluck('untuk_pembayaran')->toArray());
     
     // Filter out null/empty values and trim each item (but keep original for display)
     recentPembayaran = recentPembayaran.filter(item => item && String(item).trim().length > 0)
