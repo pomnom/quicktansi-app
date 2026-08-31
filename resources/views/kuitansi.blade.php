@@ -212,7 +212,7 @@
                         <th>Untuk Pembayaran</th>
                         <th>Grand Total</th>
                         <th>Nama Penerima</th>
-                        <th>Tanggal</th>
+                        <th>Pajak</th>
                         <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -231,13 +231,13 @@
                         @php
                             $noBukuDisplay = ($kuitansi->no_buku && $kuitansi->no_buku !== 'null')
                                 ? $kuitansi->no_buku
-                                : ($kuitansi->periode_type . ' ' . $kuitansi->periode_number . ' / ' . ($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'));
+                                : ($kuitansi->periode_type . ($kuitansi->periode_number ? ' ' . $kuitansi->periode_number : '') . ' / ' . ($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'));
                         @endphp
-                        <td data-search="{{ $kuitansi->no_buku ?? ($kuitansi->periode_type . ' ' . $kuitansi->periode_number) }}">
+                        <td data-search="{{ $kuitansi->no_buku ?? ($kuitansi->periode_type . ($kuitansi->periode_number ? ' ' . $kuitansi->periode_number : '')) }}">
                             <span class="no-buku-badge">{!! $noBukuDisplay !!}</span>
                         </td>
                         <td data-search="{{ $kuitansi->nomor_rekening }}">
-                            <small class="text-muted">{{ $kuitansi->nomor_rekening }}</small>
+                            <small class="text-muted">{{ $kuitansi->formatted_nomor_rekening }}</small>
                         </td>
                         <td data-search="{{ $kuitansi->untuk_pembayaran }}">
                             <small>{{ \Illuminate\Support\Str::limit($kuitansi->untuk_pembayaran, 80) }}</small>
@@ -246,8 +246,23 @@
                             <span class="badge-nominal">Rp {{ number_format((int)($kuitansi->total_akhir ?? 0), 0, ',', '.') }}</span>
                         </td>
                         <td data-search="{{ $kuitansi->nama_penerima }}">{{ $kuitansi->nama_penerima }}</td>
-                        <td data-search="{{ $kuitansi->tanggal_kuitansi }} {{ $kuitansi->tanggal_kuitansi ? \Carbon\Carbon::parse($kuitansi->tanggal_kuitansi)->format('d/m/Y') : '' }}" data-raw-date="{{ $kuitansi->tanggal_kuitansi }}">
-                            <small>{{ $kuitansi->tanggal_kuitansi ? \Carbon\Carbon::parse($kuitansi->tanggal_kuitansi)->format('d/m/Y') : '-' }}</small>
+                        <td data-search="{{ $kuitansi->pph_22 }} {{ $kuitansi->pph_23 }} {{ $kuitansi->ppn }}">
+                            <small>
+                                @php
+                                    $pajakArray = [];
+                                    if ($kuitansi->pph_22 && $kuitansi->pph_22 > 0) {
+                                        $pajakArray[] = 'PPh 22: ' . number_format($kuitansi->pph_22, 0, ',', '.');
+                                    }
+                                    if ($kuitansi->pph_23 && $kuitansi->pph_23 > 0) {
+                                        $pajakArray[] = 'PPh 23: ' . number_format($kuitansi->pph_23, 0, ',', '.');
+                                    }
+                                    if ($kuitansi->ppn && $kuitansi->ppn > 0) {
+                                        $pajakArray[] = 'PPN: ' . number_format($kuitansi->ppn, 0, ',', '.');
+                                    }
+                                    $pajak = !empty($pajakArray) ? implode(' / ', $pajakArray) : '-';
+                                @endphp
+                                {{ $pajak }}
+                            </small>
                         </td>
                         <td class="text-center">
                             <div class="aksi-buttons d-inline-flex">
@@ -379,6 +394,7 @@
                     </div>
                     <input type="hidden" id="nomor_rekening" name="nomor_rekening" required>
                     <input type="hidden" id="selected_id_akun" name="id_akun">
+                    <input type="hidden" id="selected_id_kode_rekening" name="id_kode_rekening">
 
                     <div class="row">
                         <div class="col-md-4">
@@ -418,9 +434,10 @@
                         <span class="font-weight-bold ml-2 text-success" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Keterangan Pembayaran</span>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group position-relative">
                         <label for="untuk_pembayaran" class="font-weight-bold small">Untuk Pembayaran <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="untuk_pembayaran" name="untuk_pembayaran" placeholder="Jelaskan tujuan pembayaran, misal: Pembayaran pengadaan ATK bulan Maret..." required>
+                        <textarea class="form-control textarea-autocomplete" id="untuk_pembayaran" name="untuk_pembayaran" rows="3" placeholder="Jelaskan tujuan pembayaran, misal: Pembayaran pengadaan ATK bulan Maret..." required></textarea>
+                        <div class="autocomplete-suggestions" id="untukPembayaranSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ddd; border-top:none; max-height:200px; overflow-y:auto; z-index:1000;"></div>
                     </div>
 
                     <hr class="my-3">
@@ -525,8 +542,8 @@
                     <div class="form-group mb-1">
                         <div class="p-3 rounded d-flex align-items-center justify-content-between" style="background:#e8f4f8;border:2px solid #4e73df;">
                             <div>
-                                <span class="font-weight-bold text-primary" style="font-size:14px;"><i class="fas fa-calculator mr-1"></i>Total Akhir</span><br>
-                                <small class="text-muted">DPP + PPN + PPH</small>
+                                <span class="font-weight-bold text-primary" style="font-size:14px;"><i class="fas fa-calculator mr-1"></i>Grand Total</span><br>
+                                <small class="text-muted">Total Belanja (DPP)</small>
                             </div>
                             <input type="text" id="total_akhir_display" value="Rp 0" readonly
                                 style="border:none;background:transparent;font-size:22px;font-weight:800;color:#4e73df;text-align:right;width:55%;padding:0;box-shadow:none;">
@@ -566,7 +583,7 @@
                     <button class="btn btn-secondary" type="button" data-dismiss="modal" style="border-radius:8px;">
                         <i class="fas fa-times mr-1"></i>Batal
                     </button>
-                    <button class="btn btn-primary" type="button" onclick="updateAddFormBefore(event)" style="border-radius:8px;">
+                    <button class="btn btn-primary" type="button" id="btnSimpanKuitansi" onclick="updateAddFormBefore(event)" style="border-radius:8px;" disabled>
                         <i class="fas fa-save mr-1"></i>Simpan Kuitansi
                     </button>
                 </div>
@@ -604,6 +621,8 @@
                         <span id="edit_display_kode_rekening" class="ml-2 font-weight-bold text-dark"></span>
                     </div>
                     <input type="hidden" id="edit_nomor_rekening" name="nomor_rekening">
+                    <input type="hidden" id="edit_id_akun" name="id_akun">
+                    <input type="hidden" id="edit_id_kode_rekening" name="id_kode_rekening">
 
                     <div class="row">
                         <div class="col-md-4">
@@ -643,9 +662,10 @@
                         <span class="font-weight-bold ml-2 text-success" style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;">Keterangan Pembayaran</span>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group position-relative">
                         <label for="edit_untuk_pembayaran" class="font-weight-bold small">Untuk Pembayaran <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_untuk_pembayaran" name="untuk_pembayaran" placeholder="Jelaskan tujuan pembayaran..." required>
+                        <textarea class="form-control textarea-autocomplete" id="edit_untuk_pembayaran" name="untuk_pembayaran" rows="3" placeholder="Jelaskan tujuan pembayaran..." required></textarea>
+                        <div class="autocomplete-suggestions" id="editUntukPembayaranSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ddd; border-top:none; max-height:200px; overflow-y:auto; z-index:1000;"></div>
                     </div>
 
                     <hr class="my-3">
@@ -750,8 +770,8 @@
                     <div class="form-group mb-1">
                         <div class="p-3 rounded d-flex align-items-center justify-content-between" style="background:#e8f4f8;border:2px solid #4e73df;">
                             <div>
-                                <span class="font-weight-bold text-primary" style="font-size:14px;"><i class="fas fa-calculator mr-1"></i>Total Akhir</span><br>
-                                <small class="text-muted">DPP + PPN + PPH</small>
+                                <span class="font-weight-bold text-primary" style="font-size:14px;"><i class="fas fa-calculator mr-1"></i>Grand Total</span><br>
+                                <small class="text-muted">Total Belanja (DPP)</small>
                             </div>
                             <input type="text" id="edit_total_akhir_display" value="Rp 0" readonly
                                 style="border:none;background:transparent;font-size:22px;font-weight:800;color:#4e73df;text-align:right;width:55%;padding:0;box-shadow:none;">
@@ -791,7 +811,7 @@
                     <button class="btn btn-secondary" type="button" data-dismiss="modal" style="border-radius:8px;">
                         <i class="fas fa-times mr-1"></i>Batal
                     </button>
-                    <button class="btn btn-info" type="button" onclick="updateEditFormBefore(event)" style="border-radius:8px;">
+                    <button class="btn btn-info" type="button" id="btnSimpanPerubahan" onclick="updateEditFormBefore(event)" style="border-radius:8px;" disabled>
                         <i class="fas fa-save mr-1"></i>Simpan Perubahan
                     </button>
                 </div>
@@ -841,9 +861,10 @@
         // Initialize DataTable
         var table = $('#dataTable').DataTable({
             destroy: true,
-            responsive: true,
+            responsive: false,
             autoWidth: false,
             dom: 'lrtip',
+            order: [[2, 'asc']],
             columnDefs: [
                 { orderable: false, targets: [0, 8] },
                 { searchable: false, targets: [0, 8] },
@@ -866,6 +887,24 @@
             },
             pageLength: 10,
             lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Semua"]],
+        });
+
+        // Function to renumber after sort/filter
+        function renumberRows() {
+            let counter = 1;
+            $('#dataTable tbody tr:visible').each(function() {
+                $(this).find('td:eq(1)').text(counter);
+                counter++;
+            });
+        }
+
+        // Renumber on initial load
+        renumberRows();
+
+        // Renumber whenever table is redrawn (sort, filter, pagination)
+        table.on('draw', function() {
+            renumberRows();
+            updateExportButton();  // Update button visibility after redraw
         });
 
         function normalizeText(value) {
@@ -893,7 +932,14 @@
             return d;
         }
 
-        $.fn.dataTable.ext.search.push(function (settings, data) {
+        // Track all row data for filtering
+        const allRows = {};
+        $('#dataTable tbody tr').each(function(idx) {
+            const tanggal = $(this).attr('data-tanggal');
+            allRows[idx] = { tanggal: tanggal };
+        });
+
+        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
             if (settings.nTable.id !== 'dataTable') return true;
 
             const noBukuFilter = normalizeText($('#filter_no_buku').val());
@@ -904,12 +950,11 @@
             const start = $('#filter_tanggal_mulai').val();
             const end = $('#filter_tanggal_selesai').val();
 
-            // Kolom: 0 checkbox, 1 no, 2 no_buku, 3 rekening, 4 pembayaran, 5 total, 6 penerima, 7 tanggal, 8 aksi
+            // Kolom: 0 checkbox, 1 no, 2 no_buku, 3 rekening, 4 pembayaran, 5 total, 6 penerima, 7 pajak, 8 aksi
             const rowNoBuku = extractText(data[2]);
             const rowRekening = extractText(data[3]);
             const rowPembayaran = extractText(data[4]);
             const rowPenerima = extractText(data[6]);
-            const rowDateText = extractText(data[7]);
 
             if (noBukuFilter && !rowNoBuku.includes(noBukuFilter)) return false;
             if (rekeningFilter && !rowRekening.includes(rekeningFilter)) return false;
@@ -917,7 +962,10 @@
             if (pembayaranFilter && !rowPembayaran.includes(pembayaranFilter)) return false;
 
             if (!start && !end) return true;
-            const rowDate = parseDdMmYyyy(rowDateText);
+            
+            // Get date from tracked row data
+            const rowDateText = allRows[dataIndex] ? allRows[dataIndex].tanggal : '';
+            const rowDate = parseYyyyMmDd(rowDateText);
             if (!rowDate) return false;
 
             const startDate = parseYyyyMmDd(start);
@@ -948,19 +996,30 @@
 
         $('#resetFilterBtn').on('click', function () {
             $('#filter_no_buku, #filter_rekening, #filter_penerima, #filter_pembayaran, #filter_tanggal_mulai, #filter_tanggal_selesai').val('');
+            $('#selectAllCheckbox').prop('checked', false);  // Reset select all
+            $('.kuitansi-checkbox').prop('checked', false);   // Uncheck all rows
             table.draw();
+            updateExportButton();  // Update button visibility
         });
 
         // Select all checkboxes
-        $('#selectAllCheckbox').on('change', function() {
-            $('.kuitansi-checkbox').prop('checked', $(this).prop('checked'));
+        $(document).on('change', '#selectAllCheckbox', function(e) {
+            const isChecked = this.checked;
+            document.querySelectorAll('.kuitansi-checkbox').forEach(cb => {
+                cb.checked = isChecked;
+            });
             updateExportButton();
         });
 
-        // Individual checkbox change
-        $('.kuitansi-checkbox').on('change', function() {
-            updateExportButton();
-        });
+        // Individual checkbox change (using event delegation)
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('kuitansi-checkbox')) {
+                updateExportButton();
+            }
+        }, true);  // Use capture phase
+
+        // Initial button state
+        updateExportButton();
 
         // Export XML button
         $('#exportXmlBtn').on('click', function() {
@@ -1021,9 +1080,20 @@
     });
 
     function updateExportButton() {
-        const selectedCount = $('.kuitansi-checkbox:checked').length;
-        $('#selectedCount').text(selectedCount);
-        $('#exportXmlBtn').toggle(selectedCount > 0);
+        // Find all visible checkboxes that are checked
+        const allCheckboxes = document.querySelectorAll('.kuitansi-checkbox');
+        const checkedCount = Array.from(allCheckboxes).filter(cb => cb.checked).length;
+        
+        // Update count display
+        document.getElementById('selectedCount').textContent = checkedCount;
+        
+        // Show/hide button
+        const btn = document.getElementById('exportXmlBtn');
+        if (checkedCount > 0) {
+            btn.style.display = '';  // Show
+        } else {
+            btn.style.display = 'none';  // Hide
+        }
     }
 
     function truncateText(text, maxLength = 50) {
@@ -1127,13 +1197,16 @@
 
     $('#selectRekeningModal').on('shown.bs.modal', loadKegiatan);
 
+    let selectedKodeGiat = '';
+    let selectedKodeSubGiat = '';
+
     function loadKegiatan() {
         $.ajax({
             url: '{{ route("api.kegiatan") }}',
             success: function(data) {
                 let options = '<option value="">-- Pilih Kegiatan --</option>';
                 data.forEach(item => {
-                    options += `<option value="${item.id}">${item.kode} - ${item.nama}</option>`;
+                    options += `<option value="${item.id}" data-kode="${item.kode_giat}">${item.kode} - ${item.nama}</option>`;
                 });
                 $('#select_kegiatan').html(options);
             }
@@ -1142,6 +1215,8 @@
 
     $('#select_kegiatan').on('change', function() {
         const idGiat = $(this).val();
+        const selectedOption = $(this).find('option:selected');
+        selectedKodeGiat = selectedOption.data('kode') || '';
         $('#select_sub_kegiatan').prop('disabled', !idGiat).html('<option value="">-- Pilih Sub Kegiatan --</option>');
         $('#select_kode_rekening').prop('disabled', true).html('<option value="">-- Pilih Kode Rekening --</option>');
         if (idGiat) loadSubKegiatan(idGiat);
@@ -1154,7 +1229,7 @@
             success: function(data) {
                 let options = '<option value="">-- Pilih Sub Kegiatan --</option>';
                 data.forEach(item => {
-                    options += `<option value="${item.id}">${item.kode} - ${item.nama}</option>`;
+                    options += `<option value="${item.id}" data-kode="${item.kode_sub_giat}">${item.kode} - ${item.nama}</option>`;
                 });
                 $('#select_sub_kegiatan').html(options);
             }
@@ -1163,6 +1238,8 @@
 
     $('#select_sub_kegiatan').on('change', function() {
         const idSubGiat = $(this).val();
+        const selectedOption = $(this).find('option:selected');
+        selectedKodeSubGiat = selectedOption.data('kode') || '';
         if (idSubGiat) loadKodeRekening(idSubGiat);
     });
 
@@ -1173,23 +1250,42 @@
             success: function(data) {
                 let options = '<option value="">-- Pilih Kode Rekening --</option>';
                 data.forEach(item => {
-                    options += `<option value="${item.id}" data-kode="${item.kode}" data-nama="${item.nama}">${item.kode} - ${item.nama}</option>`;
+                    options += `<option value="${item.id}" data-kode="${item.kode}" data-id-akun="${item.id_akun}" data-nama="${item.nama}">${item.kode} - ${item.nama}</option>`;
                 });
                 $('#select_kode_rekening').prop('disabled', false).html(options);
             }
         });
     }
 
+    // Helper function to extract last part after last dot
+    function extractLastPart(code) {
+        if (!code) return '';
+        const parts = String(code).split('.');
+        return parts[parts.length - 1];
+    }
+
+    // Helper function to format nomor_rekening as XX.YYYY.kode_akun
+    function formatFormattedNomorRekening(kodeGiat, kodeSubGiat, kodeAkun) {
+        const xx = extractLastPart(kodeGiat);
+        const yyyy = extractLastPart(kodeSubGiat);
+        return `${xx}.${yyyy}.${kodeAkun}`;
+    }
+
     $('#select_kode_rekening').on('change', function() {
         const selected = $(this).find('option:selected');
-        const idAkun = $(this).val();
-        if (idAkun) {
+        const idKodeRekening = $(this).val();
+        if (idKodeRekening) {
+            const kodeAkun = selected.data('kode');
+            const idAkun = selected.data('id-akun');
+            const formattedNomorRekening = formatFormattedNomorRekening(selectedKodeGiat, selectedKodeSubGiat, kodeAkun);
             selectedRekeningData = {
+                id_kode_rekening: idKodeRekening,
                 id_akun: idAkun,
-                kode_akun: selected.data('kode'),
-                nama_akun: selected.data('nama')
+                kode_akun: kodeAkun,
+                nama_akun: selected.data('nama'),
+                formatted_nomor_rekening: formattedNomorRekening
             };
-            $('#info_kode_akun').text(selectedRekeningData.kode_akun);
+            $('#info_kode_akun').text(formattedNomorRekening);
             $('#info_nama_akun').text(selectedRekeningData.nama_akun);
             $('#selected_rekening_info').fadeIn();
             $('#btnLanjutKeForm').prop('disabled', false);
@@ -1199,8 +1295,9 @@
     $('#btnLanjutKeForm').on('click', function() {
         if (selectedRekeningData.kode_akun) {
             $('#nomor_rekening').val(selectedRekeningData.kode_akun);
+            $('#selected_id_kode_rekening').val(selectedRekeningData.id_kode_rekening);
             $('#selected_id_akun').val(selectedRekeningData.id_akun);
-            $('#display_kode_rekening').text(truncateText(selectedRekeningData.kode_akun + ' - ' + selectedRekeningData.nama_akun));
+            $('#display_kode_rekening').text(truncateText(selectedRekeningData.formatted_nomor_rekening + ' - ' + selectedRekeningData.nama_akun));
             $('#selectRekeningModal').modal('hide');
             setTimeout(() => $('#addkuitansiModal').modal('show'), 300);
         }
@@ -1323,7 +1420,9 @@
             $('#edit_untuk_pembayaran').val(data.untuk_pembayaran);
             $('#edit_pptk_1_id').val(data.pptk_1_id).trigger('change');
             $('#edit_nomor_rekening').val(data.nomor_rekening);
-            $('#edit_display_kode_rekening').text(data.nomor_rekening || '-');
+            $('#edit_id_kode_rekening').val(data.id_kode_rekening);
+            $('#edit_id_akun').val(data.id_akun);
+            $('#edit_display_kode_rekening').text(data.formatted_nomor_rekening || data.nomor_rekening || '-');
             
             // Populate PPH 22 kode
             if (data.kode_objek_pajak) {
@@ -1395,14 +1494,254 @@
     }
 
     function formatPeriodeLengkap(type, number) {
-        return `${type}-${number}`;
+        // If number is null, 0, or undefined, return only type
+        return number ? `${type}-${number}` : type;
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // FORM VALIDATION - Disabled Submit Button Until All Required Fields Filled
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function validateAddForm() {
+        // Check all required fields
+        const tanggalKuitansi = document.getElementById('tanggal_kuitansi').value.trim();
+        const penerima = document.getElementById('penerima_lookup').value.trim();
+        const penerimaType = document.getElementById('penerima_type').value;
+        const untukPembayaran = document.getElementById('untuk_pembayaran').value.trim();
+        const pptk = document.getElementById('pptk_1_id').value;
+        const nomorRekening = document.getElementById('nomor_rekening').value;
+
+        // Check if at least 1 item exists
+        const itemRows = document.querySelectorAll('#itemsBody tr');
+        const hasItems = itemRows.length > 0;
+
+        // All required fields must be filled AND at least 1 item must exist
+        const isValid = tanggalKuitansi && penerima && penerimaType && untukPembayaran && pptk && nomorRekening && hasItems;
+        
+        const btn = document.getElementById('btnSimpanKuitansi');
+        if (btn) {
+            if (isValid) {
+                btn.removeAttribute('disabled');
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.setAttribute('disabled', 'disabled');
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+    }
+
+    function validateEditForm() {
+        // Check all required fields
+        const tanggalKuitansi = document.getElementById('edit_tanggal_kuitansi').value.trim();
+        const penerima = document.getElementById('edit_penerima_lookup').value.trim();
+        const penerimaType = document.getElementById('edit_penerima_type').value;
+        const untukPembayaran = document.getElementById('edit_untuk_pembayaran').value.trim();
+        const pptk = document.getElementById('edit_pptk_1_id').value;
+
+        // Check if at least 1 item exists
+        const itemRows = document.querySelectorAll('#editItemsBody tr');
+        const hasItems = itemRows.length > 0;
+
+        // All required fields must be filled AND at least 1 item must exist
+        const isValid = tanggalKuitansi && penerima && penerimaType && untukPembayaran && pptk && hasItems;
+        
+        const btn = document.getElementById('btnSimpanPerubahan');
+        if (btn) {
+            if (isValid) {
+                btn.removeAttribute('disabled');
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.setAttribute('disabled', 'disabled');
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+    }
+
+    // Attach validation listeners when modal opens
+    $('#addkuitansiModal').on('show.bs.modal', function() {
+        // Add validation to required fields
+        document.getElementById('tanggal_kuitansi').addEventListener('change', validateAddForm);
+        document.getElementById('penerima_lookup').addEventListener('input', validateAddForm);
+        document.getElementById('penerima_lookup').addEventListener('change', validateAddForm);
+        document.getElementById('untuk_pembayaran').addEventListener('input', validateAddForm);
+        document.getElementById('pptk_1_id').addEventListener('change', validateAddForm);
+
+        // Listen for datalist selection (when user picks from dropdown)
+        document.getElementById('penerima_lookup').addEventListener('change', function() {
+            setTimeout(validateAddForm, 100); // Delay to ensure syncPenerima completes
+        });
+
+        // Validate when items table changes
+        const itemsBody = document.getElementById('itemsBody');
+        const observer = new MutationObserver(validateAddForm);
+        observer.observe(itemsBody, { childList: true, subtree: true });
+
+        // Validate when item data changes
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('item-name') || e.target.classList.contains('item-price') || e.target.classList.contains('item-qty') || e.target.classList.contains('item-unit')) {
+                validateAddForm();
+            }
+        });
+
+        // Initial validation
+        validateAddForm();
+    });
+
+    $('#editkuitansiModal').on('show.bs.modal', function() {
+        // Add validation to required fields
+        document.getElementById('edit_tanggal_kuitansi').addEventListener('change', validateEditForm);
+        document.getElementById('edit_penerima_lookup').addEventListener('input', validateEditForm);
+        document.getElementById('edit_penerima_lookup').addEventListener('change', validateEditForm);
+        document.getElementById('edit_untuk_pembayaran').addEventListener('input', validateEditForm);
+        document.getElementById('edit_pptk_1_id').addEventListener('change', validateEditForm);
+
+        // Listen for datalist selection (when user picks from dropdown)
+        document.getElementById('edit_penerima_lookup').addEventListener('change', function() {
+            setTimeout(validateEditForm, 100); // Delay to ensure syncPenerima completes
+        });
+
+        // Validate when items table changes
+        const editItemsBody = document.getElementById('editItemsBody');
+        const observer = new MutationObserver(validateEditForm);
+        observer.observe(editItemsBody, { childList: true, subtree: true });
+
+        // Validate when item data changes
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('item-name') || e.target.classList.contains('item-price') || e.target.classList.contains('item-qty') || e.target.classList.contains('item-unit')) {
+                validateEditForm();
+            }
+        });
+
+        // Initial validation
+        validateEditForm();
+    });
 
     // Filter panel chevron toggle
     $('#filterInner').on('show.bs.collapse', function () {
         $('#filterInnerChevron').removeClass('rotated');
     }).on('hide.bs.collapse', function () {
         $('#filterInnerChevron').addClass('rotated');
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TEXTAREA AUTOCOMPLETE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Get recent "untuk_pembayaran" values from PHP and clean them
+    let recentPembayaran = @json(\DB::table('kuitansis')->distinct()->orderBy('created_at', 'desc')->limit(50)->pluck('untuk_pembayaran')->toArray());
+    
+    // Filter out null/empty values and trim each item (but keep original for display)
+    recentPembayaran = recentPembayaran.filter(item => item && String(item).trim().length > 0)
+                                       .map(item => String(item).trim());
+
+    function normalizeForSearch(text) {
+        // Normalize text for searching: lowercase, trim, normalize spaces
+        return String(text || '')
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, ' ');  // Replace multiple spaces with single space
+    }
+
+    function setupTextareaAutocomplete(textareaSelector, suggestionsSelector) {
+        const textarea = document.querySelector(textareaSelector);
+        const suggestionsDiv = document.querySelector(suggestionsSelector);
+
+        if (!textarea || !suggestionsDiv) return;
+
+        textarea.addEventListener('input', function() {
+            const inputValue = normalizeForSearch(this.value);
+            
+            if (inputValue.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+
+            // Filter suggestions - match if any word in input matches any word in item
+            const inputWords = inputValue.split(' ').filter(w => w.length > 0);
+            
+            const filtered = recentPembayaran.filter(item => {
+                if (!item) return false;
+                const normalizedItem = normalizeForSearch(item);
+                // Match if ANY input word is found in the item
+                return inputWords.some(word => normalizedItem.includes(word));
+            });
+
+            if (filtered.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+
+            // Build suggestions HTML - show up to 15 results (instead of 10)
+            let html = '';
+            const maxResults = Math.min(15, filtered.length);
+            
+            for (let i = 0; i < maxResults; i++) {
+                const item = filtered[i];
+                html += `<div class="autocomplete-item" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #eee; white-space: normal; word-wrap: break-word; max-height: 60px; overflow: hidden;">${escapeHtml(item)}</div>`;
+            }
+            
+            // Show count if there are more results
+            if (filtered.length > maxResults) {
+                html += `<div style="padding:8px 12px; background:#f9f9f9; border-top:1px solid #ddd; font-size:12px; color:#666;">+${filtered.length - maxResults} more results</div>`;
+            }
+            
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.style.display = 'block';
+            suggestionsDiv.style.maxHeight = '300px';  // Show more visible items
+
+            // Add click handlers to suggestions
+            suggestionsDiv.querySelectorAll('.autocomplete-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    textarea.value = this.textContent;
+                    suggestionsDiv.style.display = 'none';
+                    textarea.dispatchEvent(new Event('input'));
+                    textarea.dispatchEvent(new Event('change'));
+                    validateAddForm();  // Trigger validation
+                    validateEditForm(); // Trigger validation
+                });
+                item.addEventListener('mouseover', function() {
+                    this.style.backgroundColor = '#f5f5f5';
+                });
+                item.addEventListener('mouseout', function() {
+                    this.style.backgroundColor = 'transparent';
+                });
+            });
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target !== textarea && !suggestionsDiv.contains(e.target)) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+
+        textarea.addEventListener('focus', function() {
+            if (this.value.length > 0 && recentPembayaran.length > 0) {
+                // Trigger input event to show filtered suggestions
+                this.dispatchEvent(new Event('input'));
+            }
+        });
+
+        textarea.addEventListener('blur', function() {
+            // Delay hiding to allow click on suggestion
+            setTimeout(() => {
+                if (document.activeElement !== suggestionsDiv) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            }, 200);
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Initialize autocomplete for both textareas when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        setupTextareaAutocomplete('#untuk_pembayaran', '#untukPembayaranSuggestions');
+        setupTextareaAutocomplete('#edit_untuk_pembayaran', '#editUntukPembayaranSuggestions');
     });
     </script>
 @endpush

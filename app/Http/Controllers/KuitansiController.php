@@ -18,7 +18,9 @@ class KuitansiController extends Controller
         // Filter data berdasarkan instansi user yang sedang login
         $userInstansi = auth()->user()->instansi;
 
-        $kuitansis = Kuitansi::with('rekanan')->where('instansi', $userInstansi)->get();
+        $kuitansis = Kuitansi::with('rekanan', 'kodeRekening.subKegiatan.kegiatan')
+            ->where('instansi', $userInstansi)
+            ->get();
         $rekanans = Rekanan::where('instansi', $userInstansi)->get();
         $pptks = Staff::where('status', 'PPTK')->where('instansi', $userInstansi)->get();
         $staffs = Staff::where('instansi', $userInstansi)->orderBy('nama')->get();
@@ -105,7 +107,7 @@ class KuitansiController extends Controller
             'staff_id' => 'nullable|exists:staff,id',
             'tanggal_kuitansi' => 'required|date',
             'rincian_item_json' => 'nullable|json',
-            'kode_objek_pajak_23' => 'nullable|string|max:100',
+            'kode_objek_pajak_23' => 'nullable|string|max:255',
             'tarif_pajak_23' => 'nullable|numeric',
             'pptk_1_id' => 'required|exists:staff,id',
         ]);
@@ -125,13 +127,16 @@ class KuitansiController extends Controller
         if ($request->filled('periode_lengkap')) {
             $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
             $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
-            $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
+            $periodeNumber = isset($periodeParts[1]) && is_numeric($periodeParts[1]) ? (int) $periodeParts[1] : null;
         }
         if ($request->filled('nomor_urut')) {
             $nomorUrut = (int) $request->nomor_urut;
         }
         if ($periodeType !== null && $nomorUrut !== null) {
-            $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
+            // Format noBuku: "TYPE NUMBER / XXX" or "TYPE / XXX" if no number
+            $noBuku = $periodeNumber !== null
+                ? $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT)
+                : $periodeType . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
         }
 
         $penerima = $this->resolvePenerima($request);
@@ -213,6 +218,8 @@ class KuitansiController extends Controller
         }
 
         Kuitansi::create([
+            'id_kode_rekening' => $request->id_kode_rekening,
+            'id_akun' => $request->id_akun,
             'nomor_rekening' => $request->nomor_rekening,
             'periode_type' => $periodeType,
             'periode_number' => $periodeNumber,
@@ -253,7 +260,7 @@ class KuitansiController extends Controller
 
     public function edit(string $id)
     {
-        $kuitansi = Kuitansi::with(['rekanan', 'pptk'])->findOrFail($id);
+        $kuitansi = Kuitansi::with(['rekanan', 'pptk', 'kodeRekening.subKegiatan.kegiatan'])->findOrFail($id);
         return response()->json($kuitansi);
     }
 
@@ -275,7 +282,7 @@ class KuitansiController extends Controller
             'tanggal_kuitansi' => 'required|date',
             'jenis_pph' => 'nullable|string|max:5',
             'rincian_item_json' => 'nullable|json',
-            'kode_objek_pajak_23' => 'nullable|string|max:100',
+            'kode_objek_pajak_23' => 'nullable|string|max:255',
             'tarif_pajak_23' => 'nullable|numeric',
             'pptk_1_id' => 'required|exists:staff,id',
         ]);
@@ -295,13 +302,16 @@ class KuitansiController extends Controller
         if ($request->filled('periode_lengkap')) {
             $periodeParts = preg_split('/[\s\-]+/', $request->periode_lengkap, 2);
             $periodeType = $periodeParts[0] ?? $request->periode_lengkap;
-            $periodeNumber = isset($periodeParts[1]) ? (int) $periodeParts[1] : 0;
+            $periodeNumber = isset($periodeParts[1]) && is_numeric($periodeParts[1]) ? (int) $periodeParts[1] : null;
         }
         if ($request->filled('nomor_urut')) {
             $nomorUrut = (int) $request->nomor_urut;
         }
         if ($periodeType !== null && $nomorUrut !== null) {
-            $noBuku = $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
+            // Format noBuku: "TYPE NUMBER / XXX" or "TYPE / XXX" if no number
+            $noBuku = $periodeNumber !== null
+                ? $periodeType . ' ' . $periodeNumber . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT)
+                : $periodeType . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
         }
 
         $kuitansi = Kuitansi::findOrFail($id);
@@ -384,6 +394,8 @@ class KuitansiController extends Controller
         }
 
         $kuitansi->update([
+            'id_kode_rekening' => $request->id_kode_rekening,
+            'id_akun' => $request->id_akun,
             'nomor_rekening' => $request->nomor_rekening,
             'periode_type' => $periodeType,
             'periode_number' => $periodeNumber,
@@ -432,7 +444,7 @@ class KuitansiController extends Controller
 
     public function preview(string $id)
     {
-        $kuitansi = Kuitansi::with(['rekanan', 'pptk'])->findOrFail($id);
+        $kuitansi = Kuitansi::with(['rekanan', 'pptk', 'kodeRekening.subKegiatan.kegiatan'])->findOrFail($id);
 
         // Get fixed staff
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
@@ -472,7 +484,7 @@ class KuitansiController extends Controller
     {
         $idSubGiat = $request->query('id_sub_giat') ?? $request->query('id');
 
-        $kodeRekening = KodeRekening::selectRaw('id_akun as id, id_akun, id_sub_giat, kode_akun as kode, kode_akun, nama_akun as nama, nama_akun')
+        $kodeRekening = KodeRekening::selectRaw('id, id_akun, id_sub_giat, kode_akun as kode, kode_akun, nama_akun as nama, nama_akun')
             ->where('id_sub_giat', $idSubGiat)
             ->orderBy('kode')
             ->get();
@@ -491,6 +503,42 @@ class KuitansiController extends Controller
         }
 
         return response()->json(['error' => 'Kode pajak tidak ditemukan'], 404);
+    }
+
+    private function resolveTaxBaseForExport($kuitansi): int
+    {
+        $rincianItem = $kuitansi->rincian_item;
+        if (!is_array($rincianItem)) {
+            return (int) round((float) ($kuitansi->dpp ?? 0));
+        }
+
+        $dpp = 0;
+        $dppBarang = 0;
+        $dppJasa = 0;
+
+        foreach ($rincianItem as $item) {
+            $jumlahRaw = $item['jumlah'] ?? null;
+            $jumlah = (is_numeric($jumlahRaw) && (float) $jumlahRaw > 0) ? (int) $jumlahRaw : 1;
+            $harga = (float) ($item['harga_satuan'] ?? 0);
+            $subtotal = $jumlah * $harga;
+
+            $dpp += $subtotal;
+            if (!empty($item['is_jasa'])) {
+                $dppJasa += $subtotal;
+            } else {
+                $dppBarang += $subtotal;
+            }
+        }
+
+        if (!empty($kuitansi->kode_objek_pajak_23)) {
+            return (int) round($dppJasa);
+        }
+
+        if (!empty($kuitansi->kode_objek_pajak)) {
+            return (int) round($dppBarang > 0 ? $dppBarang : $dpp);
+        }
+
+        return (int) round($dpp);
     }
 
     public function exportBupotXml(Request $request)
@@ -541,9 +589,10 @@ class KuitansiController extends Controller
             $bpu->addChild('IDPlaceOfBusinessActivityOfIncomeRecipient', ($kuitansi->rekanan?->npwp ?? '9990000000999000') . '000000');
             $kodeObjekPajak = $kuitansi->kode_objek_pajak ?? $kuitansi->kode_objek_pajak_23;
             $tarifPajak = $kuitansi->tarif_pajak ?? $kuitansi->tarif_pajak_23;
+            $taxBase = $this->resolveTaxBaseForExport($kuitansi);
             $bpu->addChild('TaxCertificate', 'N/A');
             $bpu->addChild('TaxObjectCode', $kodeObjekPajak);
-            $bpu->addChild('TaxBase', number_format($kuitansi->dpp, 0, '', ''));
+            $bpu->addChild('TaxBase', number_format($taxBase, 0, '', ''));
             $bpu->addChild('Rate', $tarifPajak);
             $bpu->addChild('Document', $kuitansi->jenis_dokumen);
             $bpu->addChild('DocumentNumber', $kuitansi->nomor_urut . '/' . $kuitansi->periode_type . ' ' . $kuitansi->periode_number);
@@ -612,9 +661,10 @@ class KuitansiController extends Controller
             $bpu->addChild('IDPlaceOfBusinessActivityOfIncomeRecipient', ($kuitansi->rekanan?->npwp ?? '9990000000999000') . '000000');
             $kodeObjekPajak = $kuitansi->kode_objek_pajak ?? $kuitansi->kode_objek_pajak_23;
             $tarifPajak = $kuitansi->tarif_pajak ?? $kuitansi->tarif_pajak_23;
+            $taxBase = $this->resolveTaxBaseForExport($kuitansi);
             $bpu->addChild('TaxCertificate', 'N/A');
             $bpu->addChild('TaxObjectCode', $kodeObjekPajak);
-            $bpu->addChild('TaxBase', number_format($kuitansi->dpp, 0, '', ''));
+            $bpu->addChild('TaxBase', number_format($taxBase, 0, '', ''));
             $bpu->addChild('Rate', $tarifPajak);
             $bpu->addChild('Document', $kuitansi->jenis_dokumen);
             $bpu->addChild('DocumentNumber', $kuitansi->nomor_urut . '/' . $kuitansi->periode_type . ' ' . $kuitansi->periode_number);

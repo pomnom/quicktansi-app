@@ -12,6 +12,7 @@ class Kuitansi extends Model
     protected $fillable = [
         'nomor_rekening',
         'id_akun',
+        'id_kode_rekening',
         'periode_type',
         'periode_number',
         'nomor_urut',
@@ -67,11 +68,70 @@ class Kuitansi extends Model
     }
 
     /**
-     * Get the kode rekening.
+     * Get the kode rekening using primary key (id) for unambiguous reference.
+     * Previously used id_akun which was non-unique (one account code in multiple sub_kegiatan).
      */
     public function kodeRekening()
     {
-        return $this->belongsTo(KodeRekening::class, 'id_akun', 'id_akun');
+        return $this->belongsTo(KodeRekening::class, 'id_kode_rekening', 'id');
+    }
+
+    /**
+     * Get formatted nomor_rekening with activity and sub-activity codes.
+     * Format: XX.YYYY.full_kode_akun
+     * XX = last part after last dot of activity code (kode_giat)
+     * YYYY = last part after last dot of sub-activity code (kode_sub_giat)
+     * full_kode_akun = entire account code
+     */
+    public function getFormattedNomorRekeningAttribute()
+    {
+        try {
+            // Check if relationships are loaded
+            if (!isset($this->relations['kodeRekening'])) {
+                return $this->nomor_rekening; // Fallback if not loaded
+            }
+
+            // Get KodeRekening
+            $kodeRekening = $this->kodeRekening;
+            if (!$kodeRekening) {
+                return $this->nomor_rekening;
+            }
+
+            // Get SubKegiatan
+            if (!isset($kodeRekening->relations['subKegiatan'])) {
+                return $this->nomor_rekening;
+            }
+            $subKegiatan = $kodeRekening->subKegiatan;
+            if (!$subKegiatan) {
+                return $this->nomor_rekening;
+            }
+
+            // Get Kegiatan
+            if (!isset($subKegiatan->relations['kegiatan'])) {
+                return $this->nomor_rekening;
+            }
+            $kegiatan = $subKegiatan->kegiatan;
+            if (!$kegiatan) {
+                return $this->nomor_rekening;
+            }
+
+            // Extract last part after last dot from kode_giat
+            $kodeGiatParts = explode('.', $kegiatan->kode_giat ?? '');
+            $lastPartKegiatan = end($kodeGiatParts);
+
+            // Extract last part after last dot from kode_sub_giat
+            $kodeSubGiatParts = explode('.', $subKegiatan->kode_sub_giat ?? '');
+            $lastPartSubKegiatan = end($kodeSubGiatParts);
+
+            // Get full kode_akun
+            $kodeAkun = $kodeRekening->kode_akun ?? $this->nomor_rekening;
+
+            // Format as lastPartKegiatan.lastPartSubKegiatan.kode_akun
+            return "$lastPartKegiatan.$lastPartSubKegiatan.$kodeAkun";
+        } catch (\Exception $e) {
+            // If anything goes wrong, return original
+            return $this->nomor_rekening;
+        }
     }
 
 }

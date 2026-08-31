@@ -335,8 +335,8 @@ function calculateTotalAkhir() {
         dppDisplay.value = "Rp " + dpp.toLocaleString("id-ID");
     }
 
-    // Total Akhir = DPP + PPN - PPH
-    const totalAkhir = dpp + ppn + pph;
+    // Total Akhir = DPP only (Grand Total is shopping total only, no taxes)
+    const totalAkhir = dpp;
 
     const totalField = document.getElementById("total_akhir_display");
     if (totalField) {
@@ -357,8 +357,8 @@ function calculateEditTotalAkhir() {
         dppDisplay.value = "Rp " + dpp.toLocaleString("id-ID");
     }
 
-    // Total Akhir = DPP + PPN - PPH
-    const totalAkhir = dpp + ppn + pph;
+    // Total Akhir = DPP only (Grand Total is shopping total only, no taxes)
+    const totalAkhir = dpp;
 
     const totalField = document.getElementById("edit_total_akhir_display");
     if (totalField) {
