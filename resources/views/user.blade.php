@@ -157,7 +157,7 @@
                         <td class="text-center text-muted">{{ $index + 1 }}</td>
                         <td>
                             <span class="nip-text">{{ $user->nip }}</span>
-                            @if($user->id == auth()->id())
+                            @if($user->id == auth()->user()->id)
                                 <br><span class="me-badge mt-1"><i class="fas fa-user-check mr-1"></i>Anda</span>
                             @endif
                         </td>
@@ -178,10 +178,10 @@
                                 <button class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit" onclick='editUser(@json($user))'>
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-warning btn-sm" style="border-radius:8px;" title="Reset Password ke NIP" onclick="resetPassword({{ $user->id }}, '{{ $user->nip }}')">
+                                <button class="btn btn-warning btn-sm" style="border-radius:8px;" title="Reset Password ke NIP" onclick="resetPassword({{ $user->id }}, '{{ addslashes($user->nip) }}')">
                                     <i class="fas fa-key"></i>
                                 </button>
-                                @if($user->id != auth()->id())
+                                @if($user->id != auth()->user()->id)
                                     <form action="{{ route('user.destroy', $user->id) }}" method="POST" style="display:inline;" onsubmit="return confirmHapusUser(event)">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm" style="border-radius:8px;" title="Hapus">

@@ -166,7 +166,7 @@
                             <td class="text-center">
                                 <div class="d-inline-flex" style="gap:4px;">
                                     <button type="button" class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit"
-                                        onclick="openEditKegiatan({{ $kegiatan->id }}, '{{ $kegiatan->kode_giat }}', '{{ addslashes($kegiatan->nama_giat) }}')">
+                                        onclick="openEditKegiatan({{ $kegiatan->id }}, '{{ addslashes($kegiatan->kode_giat) }}', '{{ addslashes($kegiatan->nama_giat) }}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <form method="POST" action="{{ route('master-rekening.kegiatan.destroy', $kegiatan->id) }}" class="d-inline" onsubmit="return confirmHapus(event, 'kegiatan ini');">
@@ -232,7 +232,7 @@
                             <td class="text-center">
                                 <div class="d-inline-flex" style="gap:4px;">
                                     <button type="button" class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit"
-                                        onclick="openEditSubKegiatan({{ $subKegiatan->id }}, '{{ $subKegiatan->id_giat }}', '{{ $subKegiatan->kode_sub_giat }}', '{{ addslashes($subKegiatan->nama_sub_giat) }}')">
+                                        onclick="openEditSubKegiatan({{ $subKegiatan->id }}, '{{ $subKegiatan->id_giat }}', '{{ addslashes($subKegiatan->kode_sub_giat) }}', '{{ addslashes($subKegiatan->nama_sub_giat) }}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <form method="POST" action="{{ route('master-rekening.sub-kegiatan.destroy', $subKegiatan->id) }}" class="d-inline" onsubmit="return confirmHapus(event, 'sub kegiatan ini');">
@@ -306,7 +306,7 @@
                             <td class="text-center">
                                 <div class="d-inline-flex" style="gap:4px;">
                                     <button type="button" class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit"
-                                        onclick="openEditKodeRekening({{ $rekening->id }}, '{{ $rekening->id_sub_giat }}', '{{ $rekening->kode_akun }}', '{{ addslashes($rekening->nama_akun) }}', {{ $rekening->is_blokir ? 'true' : 'false' }})">
+                                        onclick="openEditKodeRekening({{ $rekening->id }}, '{{ $rekening->id_sub_giat }}', '{{ addslashes($rekening->kode_akun) }}', '{{ addslashes($rekening->nama_akun) }}', {{ $rekening->is_blokir ? 'true' : 'false' }})">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <form method="POST" action="{{ route('master-rekening.kode-rekening.destroy', $rekening->id) }}" class="d-inline" onsubmit="return confirmHapus(event, 'kode rekening ini');">

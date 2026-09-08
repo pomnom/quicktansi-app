@@ -1,3 +1,8 @@
+@php
+    $noBukuDisplay = ($kuitansi->no_buku && $kuitansi->no_buku !== 'null')
+        ? $kuitansi->no_buku
+        : ($kuitansi->periode_type . ($kuitansi->periode_number ? ' ' . $kuitansi->periode_number : '') . ' / ' . ($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) : str_repeat("\u{00A0}", 5)));
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,7 +25,7 @@
             <div class="toolbar-divider"></div>
             <div class="doc-info">
                 <div class="doc-title">{{ $kuitansi->nama_penerima }}</div>
-                <div class="doc-meta">No. Buku: {!! ($kuitansi->no_buku && $kuitansi->no_buku !== 'null') ? $kuitansi->no_buku : ($kuitansi->periode_type.($kuitansi->periode_number ? ' '.$kuitansi->periode_number : '').' / '.($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut,3,'0',STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')) !!}</div>
+                <div class="doc-meta">No. Buku: {{ $noBukuDisplay }}</div>
             </div>
         </div>
 
@@ -57,7 +62,7 @@
     <div class="info-strip">
         <div class="info-chip">
             <i class="fas fa-hashtag"></i>
-            <span>No. Buku:&nbsp;<strong>{!! ($kuitansi->no_buku && $kuitansi->no_buku !== 'null') ? $kuitansi->no_buku : ($kuitansi->periode_type.($kuitansi->periode_number ? ' '.$kuitansi->periode_number : '').' / '.($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut,3,'0',STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')) !!}</strong>
+            <span>No. Buku:&nbsp;<strong>{{ $noBukuDisplay }}</strong>
             </span>
         </div>
         <div class="info-chip">
@@ -124,7 +129,7 @@
                 <tr>
                     <td class="label">No. Buku</td>
                     <td class="colon">:</td>
-                    <td class="value">{!! ($kuitansi->no_buku && $kuitansi->no_buku !== 'null') ? $kuitansi->no_buku : ($kuitansi->periode_type.($kuitansi->periode_number ? ' '.$kuitansi->periode_number : '').' / '.($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')) !!}</td>
+                    <td class="value">{{ $noBukuDisplay }}</td>
                 </tr>
                 <tr>
                     <td class="label">Paraf</td>

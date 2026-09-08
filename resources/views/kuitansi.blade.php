@@ -5,14 +5,6 @@
 
 @section('content')
 
-@php
-    $totalKuitansi = $kuitansis->count();
-    $totalNominal  = $kuitansis->sum('total_akhir');
-    $bulanIni      = $kuitansis->filter(fn($k) => $k->tanggal_kuitansi && \Carbon\Carbon::parse($k->tanggal_kuitansi)->isCurrentMonth());
-    $countBulanIni = $bulanIni->count();
-    $nominalBulanIni = $bulanIni->sum('total_akhir');
-@endphp
-
 <!-- Hero Banner -->
 <div class="dashboard-hero mb-4">
     <div class="d-flex align-items-center justify-content-between" style="position:relative;z-index:1;">
@@ -217,82 +209,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($kuitansis as $kuitansi)
-                    <tr class="kuitansi-row"
-                        data-no-buku="{{ strtolower($kuitansi->no_buku ?? '') }}"
-                        data-rekening="{{ strtolower($kuitansi->nomor_rekening ?? '') }}"
-                        data-penerima="{{ strtolower($kuitansi->nama_penerima ?? '') }}"
-                        data-pembayaran="{{ strtolower($kuitansi->untuk_pembayaran ?? '') }}"
-                        data-tanggal="{{ $kuitansi->tanggal_kuitansi }}">
-                        <td class="text-center">
-                            <input type="checkbox" class="kuitansi-checkbox" value="{{ $kuitansi->id }}" title="Pilih kuitansi ini">
-                        </td>
-                        <td>{{ $loop->iteration }}</td>
-                        @php
-                            $noBukuDisplay = ($kuitansi->no_buku && $kuitansi->no_buku !== 'null')
-                                ? $kuitansi->no_buku
-                                : ($kuitansi->periode_type . ($kuitansi->periode_number ? ' ' . $kuitansi->periode_number : '') . ' / ' . ($kuitansi->nomor_urut ? str_pad($kuitansi->nomor_urut, 3, '0', STR_PAD_LEFT) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'));
-                        @endphp
-                        <td data-search="{{ $kuitansi->no_buku ?? ($kuitansi->periode_type . ($kuitansi->periode_number ? ' ' . $kuitansi->periode_number : '')) }}">
-                            <span class="no-buku-badge">{!! $noBukuDisplay !!}</span>
-                        </td>
-                        <td data-search="{{ $kuitansi->nomor_rekening }}">
-                            <small class="text-muted">{{ $kuitansi->formatted_nomor_rekening }}</small>
-                        </td>
-                        <td data-search="{{ $kuitansi->untuk_pembayaran }}">
-                            <small>{{ \Illuminate\Support\Str::limit($kuitansi->untuk_pembayaran, 80) }}</small>
-                        </td>
-                        <td data-search="{{ (int)($kuitansi->total_akhir ?? 0) }}">
-                            <span class="badge-nominal">Rp {{ number_format((int)($kuitansi->total_akhir ?? 0), 0, ',', '.') }}</span>
-                        </td>
-                        <td data-search="{{ $kuitansi->nama_penerima }}">{{ $kuitansi->nama_penerima }}</td>
-                        <td data-search="{{ $kuitansi->pph_22 }} {{ $kuitansi->pph_23 }} {{ $kuitansi->ppn }}">
-                            <small>
-                                @php
-                                    $pajakArray = [];
-                                    if ($kuitansi->pph_22 && $kuitansi->pph_22 > 0) {
-                                        $pajakArray[] = 'PPh 22: ' . number_format($kuitansi->pph_22, 0, ',', '.');
-                                    }
-                                    if ($kuitansi->pph_23 && $kuitansi->pph_23 > 0) {
-                                        $pajakArray[] = 'PPh 23: ' . number_format($kuitansi->pph_23, 0, ',', '.');
-                                    }
-                                    if ($kuitansi->ppn && $kuitansi->ppn > 0) {
-                                        $pajakArray[] = 'PPN: ' . number_format($kuitansi->ppn, 0, ',', '.');
-                                    }
-                                    $pajak = !empty($pajakArray) ? implode(' / ', $pajakArray) : '-';
-                                @endphp
-                                {{ $pajak }}
-                            </small>
-                        </td>
-                        <td class="text-center">
-                            <div class="aksi-buttons d-inline-flex">
-                                <button class="btn btn-info edit-btn" 
-                                        title="Edit"
-                                        data-id="{{ $kuitansi->id }}" 
-                                        data-rekening="{{ $kuitansi->nomor_rekening }}" 
-                                        data-periode_type="{{ $kuitansi->periode_type }}"
-                                        data-periode_number="{{ $kuitansi->periode_number }}"
-                                        data-rekanan_id="{{ $kuitansi->rekanan_id }}" 
-                                        data-jenis_pph="{{ $kuitansi->jenis_pph }}"
-                                        data-untuk_pembayaran="{{ $kuitansi->untuk_pembayaran }}"
-                                        data-toggle="modal" 
-                                        data-target="#editkuitansiModal">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <a href="{{ route('kuitansi.preview', $kuitansi->id) }}" class="btn btn-warning" target="_blank" title="Preview">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <form method="POST" action="{{ route('kuitansi.destroy', $kuitansi->id) }}" style="display:inline;" id="deleteForm{{ $kuitansi->id }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-danger" type="button" title="Hapus" onclick="confirmDelete({{ $kuitansi->id }}, '{{ addslashes($kuitansi->nama_penerima) }}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
+                    {{-- Baris dimuat via AJAX (server-side DataTables) — lihat script kuitansi.data di bawah --}}
                 </tbody>
             </table>
         </div>
@@ -856,18 +773,140 @@
     let selectedRekeningData = { id_akun: null, kode_akun: null, nama_akun: null };
     const bendaharaBarangNama = @json($bendaharaBarang->nama ?? null);
     const bendaharaBarangNip  = @json($bendaharaBarang->nip  ?? null);
+    // Menyimpan id kuitansi yang dicentang untuk export XML — bertahan lintas halaman
+    // karena DataTables server-side hanya merender baris halaman yang sedang aktif.
+    const selectedKuitansiIds = new Set();
+
+    function escapeHtmlAttr(text) {
+        return String(text ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatRupiahNumber(value) {
+        return Number(value || 0).toLocaleString('id-ID');
+    }
+
+    function buildNoBukuDisplay(row) {
+        if (row.no_buku && row.no_buku !== 'null') return row.no_buku;
+        const nomorUrutPart = row.nomor_urut ? String(row.nomor_urut).padStart(3, '0') : '     ';
+        const periodeNumberPart = row.periode_number ? (' ' + row.periode_number) : '';
+        return (row.periode_type || '') + periodeNumberPart + ' / ' + nomorUrutPart;
+    }
+
+    function buildPajakDisplay(row) {
+        const parts = [];
+        if (row.pph_22 && row.pph_22 > 0) parts.push('PPh 22: ' + formatRupiahNumber(row.pph_22));
+        if (row.pph_23 && row.pph_23 > 0) parts.push('PPh 23: ' + formatRupiahNumber(row.pph_23));
+        if (row.ppn && row.ppn > 0) parts.push('PPN: ' + formatRupiahNumber(row.ppn));
+        return parts.length ? parts.join(' / ') : '-';
+    }
 
     $(document).ready(function () {
-        // Initialize DataTable
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const kuitansiBaseUrl = '{{ url("/kuitansi") }}';
+
+        // Initialize DataTable (server-side: tiap halaman/filter/sort memicu request AJAX baru)
         var table = $('#dataTable').DataTable({
             destroy: true,
             responsive: false,
             autoWidth: false,
             dom: 'lrtip',
+            processing: true,
+            serverSide: true,
             order: [[2, 'asc']],
-            columnDefs: [
-                { orderable: false, targets: [0, 8] },
-                { searchable: false, targets: [0, 8] },
+            ajax: {
+                url: '{{ route("kuitansi.data") }}',
+                type: 'POST',
+                data: function (d) {
+                    d._token = csrfToken;
+                    d.filter_no_buku = $('#filter_no_buku').val();
+                    d.filter_rekening = $('#filter_rekening').val();
+                    d.filter_penerima = $('#filter_penerima').val();
+                    d.filter_pembayaran = $('#filter_pembayaran').val();
+                    d.filter_tanggal_mulai = $('#filter_tanggal_mulai').val();
+                    d.filter_tanggal_selesai = $('#filter_tanggal_selesai').val();
+                }
+            },
+            columns: [
+                {
+                    data: null, orderable: false, searchable: false, className: 'text-center',
+                    render: function (data, type, row) {
+                        const checked = selectedKuitansiIds.has(String(row.id)) ? 'checked' : '';
+                        return `<input type="checkbox" class="kuitansi-checkbox" data-id="${row.id}" title="Pilih kuitansi ini" ${checked}>`;
+                    }
+                },
+                {
+                    data: null, orderable: false, searchable: false,
+                    render: function (data, type, row, meta) {
+                        return meta.settings._iDisplayStart + meta.row + 1;
+                    }
+                },
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        return `<span class="no-buku-badge">${escapeHtml(buildNoBukuDisplay(row))}</span>`;
+                    }
+                },
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        return `<small class="text-muted">${escapeHtml(row.formatted_nomor_rekening || row.nomor_rekening || '')}</small>`;
+                    }
+                },
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        const text = row.untuk_pembayaran || '';
+                        const truncated = text.length > 80 ? text.substring(0, 80) + '...' : text;
+                        return `<small>${escapeHtml(truncated)}</small>`;
+                    }
+                },
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        return `<span class="badge-nominal">Rp ${formatRupiahNumber(row.total_akhir)}</span>`;
+                    }
+                },
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        return escapeHtml(row.nama_penerima || '');
+                    }
+                },
+                {
+                    data: null, orderable: false, searchable: false,
+                    render: function (data, type, row) {
+                        return `<small>${escapeHtml(buildPajakDisplay(row))}</small>`;
+                    }
+                },
+                {
+                    data: null, orderable: false, searchable: false, className: 'text-center',
+                    render: function (data, type, row) {
+                        const previewUrl = kuitansiBaseUrl + '/' + row.id + '/preview';
+                        const deleteUrl = kuitansiBaseUrl + '/' + row.id;
+                        return `
+                            <div class="aksi-buttons d-inline-flex">
+                                <button class="btn btn-info edit-btn" title="Edit" data-id="${row.id}" data-toggle="modal" data-target="#editkuitansiModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <a href="${previewUrl}" class="btn btn-warning" target="_blank" title="Preview">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <form method="POST" action="${deleteUrl}" style="display:inline;" id="deleteForm${row.id}">
+                                    <input type="hidden" name="_token" value="${escapeHtmlAttr(csrfToken)}">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <button class="btn btn-danger delete-btn" type="button" title="Hapus" data-id="${row.id}" data-nama="${escapeHtmlAttr(row.nama_penerima || '')}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        `;
+                    }
+                }
             ],
             language: {
                 processing: "Memproses...",
@@ -887,97 +926,18 @@
             },
             pageLength: 10,
             lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Semua"]],
-        });
-
-        // Function to renumber after sort/filter
-        function renumberRows() {
-            let counter = 1;
-            $('#dataTable tbody tr:visible').each(function() {
-                $(this).find('td:eq(1)').text(counter);
-                counter++;
-            });
-        }
-
-        // Renumber on initial load
-        renumberRows();
-
-        // Renumber whenever table is redrawn (sort, filter, pagination)
-        table.on('draw', function() {
-            renumberRows();
-            updateExportButton();  // Update button visibility after redraw
-        });
-
-        function normalizeText(value) {
-            return (value || '').toString().trim().toLowerCase();
-        }
-
-        function extractText(cellHtml) {
-            return normalizeText($('<div>').html(cellHtml || '').text());
-        }
-
-        function parseDdMmYyyy(dateText) {
-            if (!dateText) return null;
-            const m = dateText.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-            if (!m) return null;
-            const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
-            d.setHours(0, 0, 0, 0);
-            return d;
-        }
-
-        function parseYyyyMmDd(dateText) {
-            if (!dateText) return null;
-            const d = new Date(dateText);
-            if (isNaN(d.getTime())) return null;
-            d.setHours(0, 0, 0, 0);
-            return d;
-        }
-
-        // Track all row data for filtering
-        const allRows = {};
-        $('#dataTable tbody tr').each(function(idx) {
-            const tanggal = $(this).attr('data-tanggal');
-            allRows[idx] = { tanggal: tanggal };
-        });
-
-        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-            if (settings.nTable.id !== 'dataTable') return true;
-
-            const noBukuFilter = normalizeText($('#filter_no_buku').val());
-            const rekeningFilter = normalizeText($('#filter_rekening').val());
-            const penerimaFilter = normalizeText($('#filter_penerima').val());
-            const pembayaranFilter = normalizeText($('#filter_pembayaran').val());
-
-            const start = $('#filter_tanggal_mulai').val();
-            const end = $('#filter_tanggal_selesai').val();
-
-            // Kolom: 0 checkbox, 1 no, 2 no_buku, 3 rekening, 4 pembayaran, 5 total, 6 penerima, 7 pajak, 8 aksi
-            const rowNoBuku = extractText(data[2]);
-            const rowRekening = extractText(data[3]);
-            const rowPembayaran = extractText(data[4]);
-            const rowPenerima = extractText(data[6]);
-
-            if (noBukuFilter && !rowNoBuku.includes(noBukuFilter)) return false;
-            if (rekeningFilter && !rowRekening.includes(rekeningFilter)) return false;
-            if (penerimaFilter && !rowPenerima.includes(penerimaFilter)) return false;
-            if (pembayaranFilter && !rowPembayaran.includes(pembayaranFilter)) return false;
-
-            if (!start && !end) return true;
-            
-            // Get date from tracked row data
-            const rowDateText = allRows[dataIndex] ? allRows[dataIndex].tanggal : '';
-            const rowDate = parseYyyyMmDd(rowDateText);
-            if (!rowDate) return false;
-
-            const startDate = parseYyyyMmDd(start);
-            const endDate = parseYyyyMmDd(end);
-
-            if (startDate && rowDate < startDate) return false;
-            if (endDate && rowDate > endDate) return false;
-            return true;
+            drawCallback: function () {
+                const checkboxes = $('.kuitansi-checkbox');
+                const allChecked = checkboxes.length > 0 && checkboxes.toArray().every(function (cb) {
+                    return selectedKuitansiIds.has(String($(cb).data('id')));
+                });
+                $('#selectAllCheckbox').prop('checked', allChecked);
+                updateExportButton();
+            }
         });
 
         function applyFilters() {
-            table.draw();
+            table.ajax.reload();
         }
 
         $('#applyFilterBtn').on('click', function () {
@@ -991,42 +951,53 @@
         });
 
         $('#filter_tanggal_mulai, #filter_tanggal_selesai').on('change', function () {
-            table.draw();
+            applyFilters();
         });
 
         $('#resetFilterBtn').on('click', function () {
             $('#filter_no_buku, #filter_rekening, #filter_penerima, #filter_pembayaran, #filter_tanggal_mulai, #filter_tanggal_selesai').val('');
-            $('#selectAllCheckbox').prop('checked', false);  // Reset select all
-            $('.kuitansi-checkbox').prop('checked', false);   // Uncheck all rows
-            table.draw();
-            updateExportButton();  // Update button visibility
+            selectedKuitansiIds.clear();
+            $('#selectAllCheckbox').prop('checked', false);
+            applyFilters();
         });
 
-        // Select all checkboxes
-        $(document).on('change', '#selectAllCheckbox', function(e) {
+        // Select all — hanya menyeleksi baris di halaman yang sedang tampil
+        $(document).on('change', '#selectAllCheckbox', function () {
             const isChecked = this.checked;
-            document.querySelectorAll('.kuitansi-checkbox').forEach(cb => {
-                cb.checked = isChecked;
+            $('.kuitansi-checkbox').each(function () {
+                const id = String($(this).data('id'));
+                this.checked = isChecked;
+                if (isChecked) {
+                    selectedKuitansiIds.add(id);
+                } else {
+                    selectedKuitansiIds.delete(id);
+                }
             });
             updateExportButton();
         });
 
-        // Individual checkbox change (using event delegation)
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('kuitansi-checkbox')) {
-                updateExportButton();
+        // Individual checkbox change (event delegation karena baris dibuat ulang tiap draw)
+        $(document).on('change', '.kuitansi-checkbox', function () {
+            const id = String($(this).data('id'));
+            if (this.checked) {
+                selectedKuitansiIds.add(id);
+            } else {
+                selectedKuitansiIds.delete(id);
             }
-        }, true);  // Use capture phase
+            updateExportButton();
+        });
+
+        // Tombol hapus (event delegation karena baris dibuat ulang tiap draw)
+        $(document).on('click', '.delete-btn', function () {
+            confirmDelete($(this).data('id'), $(this).data('nama'));
+        });
 
         // Initial button state
         updateExportButton();
 
         // Export XML button
         $('#exportXmlBtn').on('click', function() {
-            const selectedIds = [];
-            $('.kuitansi-checkbox:checked').each(function() {
-                selectedIds.push($(this).val());
-            });
+            const selectedIds = Array.from(selectedKuitansiIds);
 
             if (selectedIds.length === 0) {
                 Swal.fire('Peringatan', 'Pilih minimal 1 kuitansi', 'warning');
@@ -1040,7 +1011,6 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             const formData = new FormData();
             formData.append('_token', csrfToken);
             formData.append('kuitansi_ids', JSON.stringify(selectedIds));
@@ -1080,20 +1050,14 @@
     });
 
     function updateExportButton() {
-        // Find all visible checkboxes that are checked
-        const allCheckboxes = document.querySelectorAll('.kuitansi-checkbox');
-        const checkedCount = Array.from(allCheckboxes).filter(cb => cb.checked).length;
-        
+        const checkedCount = selectedKuitansiIds.size;
+
         // Update count display
         document.getElementById('selectedCount').textContent = checkedCount;
-        
+
         // Show/hide button
         const btn = document.getElementById('exportXmlBtn');
-        if (checkedCount > 0) {
-            btn.style.display = '';  // Show
-        } else {
-            btn.style.display = 'none';  // Hide
-        }
+        btn.style.display = checkedCount > 0 ? '' : 'none';
     }
 
     function truncateText(text, maxLength = 50) {
@@ -1202,7 +1166,7 @@
 
     function loadKegiatan() {
         $.ajax({
-            url: '{{ route("api.kegiatan") }}',
+            url: '{{ route("kuitansi.lookup.kegiatan") }}',
             success: function(data) {
                 let options = '<option value="">-- Pilih Kegiatan --</option>';
                 data.forEach(item => {
@@ -1224,7 +1188,7 @@
 
     function loadSubKegiatan(idGiat) {
         $.ajax({
-            url: '{{ route("api.subKegiatan") }}',
+            url: '{{ route("kuitansi.lookup.subKegiatan") }}',
             data: { id_giat: idGiat },
             success: function(data) {
                 let options = '<option value="">-- Pilih Sub Kegiatan --</option>';
@@ -1245,7 +1209,7 @@
 
     function loadKodeRekening(idSubGiat) {
         $.ajax({
-            url: '{{ route("api.kodeRekening") }}',
+            url: '{{ route("kuitansi.lookup.kodeRekening") }}',
             data: { id_sub_giat: idSubGiat },
             success: function(data) {
                 let options = '<option value="">-- Pilih Kode Rekening --</option>';

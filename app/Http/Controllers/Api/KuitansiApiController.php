@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Kuitansi;
 use App\Models\Rekanan;
 use App\Models\Staff;
+use App\Services\KuitansiTaxCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class KuitansiApiController extends Controller
 {
@@ -61,13 +63,20 @@ class KuitansiApiController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $user = Auth::guard('api')->user();
+        $userInstansi = $user->instansi;
+
         $validated = $request->validate([
             'nomor_rekening' => 'required|string|max:255',
             'periode_lengkap' => ['required', 'string', 'regex:/^(TU|GU)-\d+$/'],
             'nomor_urut' => 'required|integer|min:1',
-            'rekanan_id' => 'required|exists:rekanans,id',
+            'rekanan_id' => $user->is_superadmin
+                ? 'required|exists:rekanans,id'
+                : ['required', Rule::exists('rekanans', 'id')->where('instansi', $userInstansi)],
             'tanggal_kuitansi' => 'required|date',
-            'pptk_1_id' => 'required|exists:staff,id',
+            'pptk_1_id' => $user->is_superadmin
+                ? 'required|exists:staff,id'
+                : ['required', Rule::exists('staff', 'id')->where('instansi', $userInstansi)],
             'rincian_item' => 'nullable|array',
             'ppn_checkbox' => 'nullable|boolean',
             'tarif_pajak' => 'nullable|numeric|min:0',
@@ -81,72 +90,35 @@ class KuitansiApiController extends Controller
             'nip_bendahara_barang' => 'nullable|string|max:50',
         ]);
 
-        $user = Auth::guard('api')->user();
-
         [$periodeType, $periodeNumber] = explode('-', $validated['periode_lengkap']);
         $periodeNumber = (int) $periodeNumber;
         $nomorUrut = (int) $validated['nomor_urut'];
 
         $rekanan = Rekanan::findOrFail($validated['rekanan_id']);
 
-        // Calculate DPP, DPP Barang, DPP Jasa from rincian_item array
-        $dpp = 0;
-        $dppBarang = 0;
-        $dppJasa = 0;
         $rincianItem = $validated['rincian_item'] ?? null;
 
-        if (is_array($rincianItem)) {
-            foreach ($rincianItem as $item) {
-                $jumlah = (int) ($item['jumlah'] ?? 0);
-                $harga = (float) ($item['harga_satuan'] ?? 0);
-                $subtotal = $jumlah * $harga;
-                $dpp += $subtotal;
-                if (!empty($item['is_jasa'])) {
-                    $dppJasa += $subtotal;
-                } else {
-                    $dppBarang += $subtotal;
-                }
-            }
-        }
-        $dpp = (int) round($dpp);
-        $dppBarang = (int) round($dppBarang);
-        $dppJasa = (int) round($dppJasa);
-
-        // PPN
-        $ppnAmount = 0;
-        if (!empty($validated['ppn_checkbox'])) {
-            $ppnAmount = (int) round($dpp * 0.11);
-        }
-
-        // PPH 22 (barang, threshold > 2 jt)
-        $pph22Amount = 0;
-        $tarifPajak22 = (float) ($validated['tarif_pajak'] ?? 0);
-        if ($tarifPajak22 > 0 && $dppBarang > 2000000) {
-            $pph22Amount = (int) round($dppBarang * $tarifPajak22 / 100);
-        }
-
-        // PPH 23 (jasa)
-        $pph23Amount = 0;
-        $tarifPajak23 = (float) ($validated['tarif_pajak_23'] ?? 0);
-        if ($tarifPajak23 > 0 && $dppJasa > 0) {
-            $pph23Amount = (int) round($dppJasa * $tarifPajak23 / 100);
-        }
-
-        $pphAmount = $pph22Amount + $pph23Amount;
-
-        if ($pph22Amount > 0 && $pph23Amount > 0)
-            $jenisPph = '22,23';
-        elseif ($pph22Amount > 0)
-            $jenisPph = '22';
-        elseif ($pph23Amount > 0)
-            $jenisPph = '23';
-        else
-            $jenisPph = '';
+        // Historically this endpoint treats a missing/invalid 'jumlah' as 0 units
+        // (unlike the web form, which defaults to 1), so that behavior is preserved here.
+        $dppResult = KuitansiTaxCalculator::computeDpp($rincianItem, 0);
+        $tax = KuitansiTaxCalculator::calculateFromDpp(
+            $dppResult['dpp'],
+            $dppResult['dpp_barang'],
+            $dppResult['dpp_jasa'],
+            !empty($validated['ppn_checkbox']),
+            (float) ($validated['tarif_pajak'] ?? 0),
+            (float) ($validated['tarif_pajak_23'] ?? 0)
+        );
+        $dpp = $tax['dpp'];
+        $ppnAmount = $tax['ppn'];
+        $pph22Amount = $tax['pph_22'];
+        $pph23Amount = $tax['pph_23'];
+        $pphAmount = $tax['pph'];
+        $jenisPph = $tax['jenis_pph'];
 
         $totalAkhir = $dpp + $ppnAmount - $pphAmount;
 
         // Fetch snapshot staff data
-        $userInstansi = $user->instansi;
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $userInstansi)->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $userInstansi)->first();
         $pptk = Staff::findOrFail($validated['pptk_1_id']);

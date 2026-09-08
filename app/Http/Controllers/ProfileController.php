@@ -46,7 +46,10 @@ class ProfileController extends Controller
             return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.'])->withInput();
         }
 
-        $user->update(['password' => Hash::make($request->password)]);
+        $user->update([
+            'password' => Hash::make($request->password),
+            'must_change_password' => false,
+        ]);
 
         return redirect()->route('profile.show')->with('success', 'Password berhasil diubah.');
     }

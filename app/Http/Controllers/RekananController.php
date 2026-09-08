@@ -53,7 +53,11 @@ class RekananController extends Controller
      */
     public function update(Request $request, Rekanan $rekanan)
     {
-        $instansi = $rekanan->instansi ?? auth()->user()->instansi;
+        if ($rekanan->instansi !== auth()->user()->instansi) {
+            abort(403, 'Unauthorized');
+        }
+
+        $instansi = $rekanan->instansi;
         $validated = $request->validate([
             'npwp' => [
                 'nullable',
@@ -67,8 +71,8 @@ class RekananController extends Controller
             'nama_pemilik_rekening' => 'required|string|max:255',
         ]);
 
-        // Keep instansi unchanged (or assign if missing)
-        $validated['instansi'] = $rekanan->instansi ?? auth()->user()->instansi;
+        // Keep instansi unchanged
+        $validated['instansi'] = $rekanan->instansi;
 
         $rekanan->update($validated);
 
@@ -80,6 +84,10 @@ class RekananController extends Controller
      */
     public function destroy(Rekanan $rekanan)
     {
+        if ($rekanan->instansi !== auth()->user()->instansi) {
+            abort(403, 'Unauthorized');
+        }
+
         $rekanan->delete();
         return redirect()->route('rekanan.index')->with('success', 'Rekanan berhasil dihapus!');
     }

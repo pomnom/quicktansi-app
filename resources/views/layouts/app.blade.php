@@ -187,6 +187,14 @@
             });
         @endif
 
+        @if(session('warning'))
+            Swal.fire({
+                icon: 'warning',
+                title: 'Perhatian',
+                text: @json(session('warning')),
+            });
+        @endif
+
         @if($errors->any())
             Swal.fire({
                 icon: 'error',

@@ -15,12 +15,7 @@ class UserController extends Controller
      */
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (!auth()->user()->is_superadmin) {
-                abort(403, 'Unauthorized. Only superadmin can access user management.');
-            }
-            return $next($request);
-        });
+        $this->middleware('superadmin');
     }
 
     /**
@@ -62,6 +57,7 @@ class UserController extends Controller
             'instansi' => $request->instansi,
             'is_superadmin' => $isSuperadmin,
             'password' => Hash::make($request->nip), // Default password = NIP
+            'must_change_password' => true,
             'email_verified_at' => now(),
         ]);
 
@@ -124,6 +120,7 @@ class UserController extends Controller
         // Reset password ke NIP
         $user->update([
             'password' => Hash::make($user->nip),
+            'must_change_password' => true,
         ]);
 
         return redirect()->route('user.index')->with('success', 'Password user berhasil direset ke NIP: ' . $user->nip);
@@ -135,7 +132,7 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         // Cegah penghapusan user sendiri
-        if ($id == auth()->id()) {
+        if ($id == auth()->user()->id) {
             return redirect()->route('user.index')->with('error', 'Tidak dapat menghapus user yang sedang login.');
         }
 

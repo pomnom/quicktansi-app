@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Kuitansi extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'nomor_rekening',
@@ -65,6 +66,14 @@ class Kuitansi extends Model
     public function pptk()
     {
         return $this->belongsTo(Staff::class, 'pptk_1_id');
+    }
+
+    /**
+     * Get the user who soft-deleted this kuitansi.
+     */
+    public function deletedBy()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
     }
 
     /**

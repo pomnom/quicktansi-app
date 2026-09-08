@@ -44,7 +44,7 @@ $(
           : "#tarif_pajak";
 
     if (kode) {
-        fetch(`/api/tarif-pajak/${kode}`)
+        fetch(`/kuitansi/lookup/tarif-pajak/${kode}`)
             .then((response) => {
                 if (!response.ok) throw new Error("Kode pajak tidak ditemukan");
                 return response.json();

@@ -28,23 +28,28 @@ Route::post('login', [AuthController::class, 'login'])->name('auth.login')->midd
 Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Dashboard & Main Routes (Protected by auth middleware)
-Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth');
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware(['auth', 'force-password-change']);
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'force-password-change'])->group(function () {
     Route::resource('user', UserController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
     Route::post('user/{id}/reset-password', [UserController::class, 'resetPassword'])->name('user.resetPassword');
 
-    Route::resource('kuitansi', KuitansiController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
+    // Rute literal/statis kuitansi didaftarkan SEBELUM Route::resource di bawah,
+    // supaya tidak pernah tertimpa wildcard {kuitansi} kalau nanti resource ini
+    // menambahkan action 'show' (GET kuitansi/{kuitansi}).
+    Route::match(['get', 'post'], 'kuitansi/data', [KuitansiController::class, 'data'])->name('kuitansi.data');
     Route::get('kuitansi/get-next-periode', [KuitansiController::class, 'getNextPeriodeNumber'])->name('kuitansi.getNextPeriode');
     Route::get('kuitansi/{id}/preview', [KuitansiController::class, 'preview'])->name('kuitansi.preview');
     Route::get('kuitansi/export/bupot-xml', [KuitansiController::class, 'exportBupotXml'])->name('kuitansi.exportBupotXml');
     Route::post('kuitansi/export/bupot-xml-selected', [KuitansiController::class, 'exportBupotXmlSelected'])->name('kuitansi.exportBupotXmlSelected');
 
-    // API routes for cascading selects
-    Route::get('api/kegiatan', [KuitansiController::class, 'getKegiatan'])->name('api.kegiatan');
-    Route::get('api/sub-kegiatan', [KuitansiController::class, 'getSubKegiatan'])->name('api.subKegiatan');
-    Route::get('api/kode-rekening', [KuitansiController::class, 'getKodeRekening'])->name('api.kodeRekening');
-    Route::get('api/tarif-pajak/{kode}', [KuitansiController::class, 'getTarifPajak'])->name('api.tarifPajak');
+    // Lookup untuk cascading select di form kuitansi (bukan bagian dari API JWT di routes/api.php)
+    Route::get('kuitansi/lookup/kegiatan', [KuitansiController::class, 'getKegiatan'])->name('kuitansi.lookup.kegiatan');
+    Route::get('kuitansi/lookup/sub-kegiatan', [KuitansiController::class, 'getSubKegiatan'])->name('kuitansi.lookup.subKegiatan');
+    Route::get('kuitansi/lookup/kode-rekening', [KuitansiController::class, 'getKodeRekening'])->name('kuitansi.lookup.kodeRekening');
+    Route::get('kuitansi/lookup/tarif-pajak/{kode}', [KuitansiController::class, 'getTarifPajak'])->name('kuitansi.lookup.tarifPajak');
+
+    Route::resource('kuitansi', KuitansiController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
 
     Route::resource('rekanan', RekananController::class)->only(['index', 'store', 'update', 'destroy']);
 

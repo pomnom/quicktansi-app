@@ -23,7 +23,7 @@ class StaffController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nip' => 'required|string|unique:staff,nip|max:255',
             'nama' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255',
@@ -32,10 +32,9 @@ class StaffController extends Controller
         ]);
 
         // Auto-assign instansi dari user yang sedang login
-        $data = $request->all();
-        $data['instansi'] = auth()->user()->instansi;
+        $validated['instansi'] = auth()->user()->instansi;
 
-        Staff::create($data);
+        Staff::create($validated);
 
         return redirect()->route('staff.index')->with('success', 'Staff berhasil ditambahkan.');
     }
@@ -45,7 +44,8 @@ class StaffController extends Controller
      */
     public function edit(string $id)
     {
-        $staff = Staff::findOrFail($id);
+        $userInstansi = auth()->user()->instansi;
+        $staff = Staff::where('instansi', $userInstansi)->findOrFail($id);
         return response()->json($staff);
     }
 
@@ -54,7 +54,7 @@ class StaffController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nip' => 'required|string|max:255|unique:staff,nip,' . $id,
             'nama' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255',
@@ -62,13 +62,13 @@ class StaffController extends Controller
             'status' => 'nullable|in:Pengguna Anggaran,PPK,PPTK,Bendahara Pengeluaran,Bendahara Barang',
         ]);
 
-        $staff = Staff::findOrFail($id);
-        
-        // Keep instansi unchanged (or assign if missing)
-        $data = $request->all();
-        $data['instansi'] = $staff->instansi ?? auth()->user()->instansi;
-        
-        $staff->update($data);
+        $userInstansi = auth()->user()->instansi;
+        $staff = Staff::where('instansi', $userInstansi)->findOrFail($id);
+
+        // Keep instansi unchanged
+        $validated['instansi'] = $staff->instansi;
+
+        $staff->update($validated);
 
         return redirect()->route('staff.index')->with('success', 'Staff berhasil diperbarui.');
     }
@@ -78,7 +78,8 @@ class StaffController extends Controller
      */
     public function destroy(string $id)
     {
-        $staff = Staff::findOrFail($id);
+        $userInstansi = auth()->user()->instansi;
+        $staff = Staff::where('instansi', $userInstansi)->findOrFail($id);
         $staff->delete();
 
         return redirect()->route('staff.index')->with('success', 'Staff berhasil dihapus.');

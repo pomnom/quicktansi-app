@@ -9,13 +9,7 @@ class InstansiController extends Controller
 {
     public function __construct()
     {
-        // Hanya superadmin yang bisa mengakses instansi
-        $this->middleware(function ($request, $next) {
-            if (!auth()->user()?->is_superadmin) {
-                abort(403, 'Unauthorized - Hanya superadmin yang dapat mengelola instansi.');
-            }
-            return $next($request);
-        });
+        $this->middleware('superadmin');
     }
 
     /**

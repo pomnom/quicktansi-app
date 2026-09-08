@@ -8,8 +8,10 @@ use App\Models\Kuitansi;
 use App\Models\Rekanan;
 use App\Models\Staff;
 use App\Models\SubKegiatan;
+use App\Services\KuitansiTaxCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class KuitansiController extends Controller
 {
@@ -18,15 +20,112 @@ class KuitansiController extends Controller
         // Filter data berdasarkan instansi user yang sedang login
         $userInstansi = auth()->user()->instansi;
 
-        $kuitansis = Kuitansi::with('rekanan', 'kodeRekening.subKegiatan.kegiatan')
-            ->where('instansi', $userInstansi)
-            ->get();
+        // Statistik dihitung lewat agregat DB, bukan menarik semua baris kuitansi
+        // ke memori — tabel datanya sendiri dimuat terpisah lewat data() (server-side DataTables).
+        $baseQuery = Kuitansi::where('instansi', $userInstansi);
+        $totalKuitansi = (clone $baseQuery)->count();
+        $totalNominal = (clone $baseQuery)->sum('total_akhir');
+        $bulanIniQuery = (clone $baseQuery)->whereYear('tanggal_kuitansi', now()->year)->whereMonth('tanggal_kuitansi', now()->month);
+        $countBulanIni = (clone $bulanIniQuery)->count();
+        $nominalBulanIni = (clone $bulanIniQuery)->sum('total_akhir');
+
         $rekanans = Rekanan::where('instansi', $userInstansi)->get();
         $pptks = Staff::where('status', 'PPTK')->where('instansi', $userInstansi)->get();
         $staffs = Staff::where('instansi', $userInstansi)->orderBy('nama')->get();
         $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->where('instansi', $userInstansi)->first();
         $kodeObjekPajaks = DB::table('kode_objek_pajaks')->orderBy('kode')->get();
-        return view('kuitansi', compact('kuitansis', 'rekanans', 'staffs', 'pptks', 'bendaharaBarang', 'kodeObjekPajaks'));
+
+        return view('kuitansi', compact(
+            'totalKuitansi',
+            'totalNominal',
+            'countBulanIni',
+            'nominalBulanIni',
+            'rekanans',
+            'staffs',
+            'pptks',
+            'bendaharaBarang',
+            'kodeObjekPajaks'
+        ));
+    }
+
+    /**
+     * AJAX data source for the server-side DataTable on the kuitansi list page.
+     * Expects DataTables' standard server-side params (draw, start, length, order)
+     * plus the custom filter panel fields (filter_no_buku, filter_rekening, etc).
+     */
+    public function data(Request $request)
+    {
+        $userInstansi = auth()->user()->instansi;
+
+        $query = Kuitansi::with('kodeRekening.subKegiatan.kegiatan')
+            ->where('instansi', $userInstansi);
+
+        if ($request->filled('filter_no_buku')) {
+            $query->where('no_buku', 'like', '%' . $request->input('filter_no_buku') . '%');
+        }
+        if ($request->filled('filter_rekening')) {
+            $query->where('nomor_rekening', 'like', '%' . $request->input('filter_rekening') . '%');
+        }
+        if ($request->filled('filter_penerima')) {
+            $query->where('nama_penerima', 'like', '%' . $request->input('filter_penerima') . '%');
+        }
+        if ($request->filled('filter_pembayaran')) {
+            $query->where('untuk_pembayaran', 'like', '%' . $request->input('filter_pembayaran') . '%');
+        }
+        if ($request->filled('filter_tanggal_mulai')) {
+            $query->whereDate('tanggal_kuitansi', '>=', $request->input('filter_tanggal_mulai'));
+        }
+        if ($request->filled('filter_tanggal_selesai')) {
+            $query->whereDate('tanggal_kuitansi', '<=', $request->input('filter_tanggal_selesai'));
+        }
+
+        $recordsFiltered = (clone $query)->count();
+        $recordsTotal = Kuitansi::where('instansi', $userInstansi)->count();
+
+        $sortMap = [
+            2 => 'no_buku',
+            3 => 'nomor_rekening',
+            4 => 'untuk_pembayaran',
+            5 => 'total_akhir',
+            6 => 'nama_penerima',
+        ];
+        $orderColumnIndex = (int) $request->input('order.0.column', 2);
+        $orderDir = strtolower($request->input('order.0.dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $sortColumn = $sortMap[$orderColumnIndex] ?? 'no_buku';
+        $query->orderBy($sortColumn, $orderDir);
+
+        $start = max(0, (int) $request->input('start', 0));
+        $length = (int) $request->input('length', 10);
+        if ($length > 0) {
+            $query->skip($start)->take($length);
+        }
+
+        $kuitansis = $query->get();
+
+        $data = $kuitansis->map(function (Kuitansi $k) {
+            return [
+                'id' => $k->id,
+                'no_buku' => $k->no_buku,
+                'periode_type' => $k->periode_type,
+                'periode_number' => $k->periode_number,
+                'nomor_urut' => $k->nomor_urut,
+                'nomor_rekening' => $k->nomor_rekening,
+                'formatted_nomor_rekening' => $k->formatted_nomor_rekening,
+                'untuk_pembayaran' => $k->untuk_pembayaran,
+                'total_akhir' => (int) ($k->total_akhir ?? 0),
+                'nama_penerima' => $k->nama_penerima,
+                'pph_22' => $k->pph_22 ? (float) $k->pph_22 : null,
+                'pph_23' => $k->pph_23 ? (float) $k->pph_23 : null,
+                'ppn' => $k->ppn ? (float) $k->ppn : null,
+            ];
+        });
+
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
     }
 
     private function resolvePenerima(Request $request): array
@@ -98,6 +197,8 @@ class KuitansiController extends Controller
             ]);
         }
 
+        $userInstansi = auth()->user()->instansi;
+
         $request->validate([
             'nomor_rekening' => 'required|string|max:255',
             'periode_lengkap' => 'nullable|string|max:50',
@@ -109,7 +210,14 @@ class KuitansiController extends Controller
             'rincian_item_json' => 'nullable|json',
             'kode_objek_pajak_23' => 'nullable|string|max:255',
             'tarif_pajak_23' => 'nullable|numeric',
-            'pptk_1_id' => 'required|exists:staff,id',
+            'pptk_1_id' => [
+                'required',
+                Rule::exists('staff', 'id')->where('instansi', $userInstansi),
+            ],
+            'id_kode_rekening' => [
+                'nullable',
+                Rule::exists('kode_rekening', 'id')->where('instansi', $userInstansi),
+            ],
         ]);
 
         if ($request->penerima_type === 'rekanan' && !$request->rekanan_id) {
@@ -146,68 +254,26 @@ class KuitansiController extends Controller
             $rincianItem = json_decode($request->rincian_item_json, true);
         }
 
-        // Calculate DPP total, DPP Barang (non-jasa), DPP Jasa
-        $dpp = 0;
-        $dppBarang = 0;
-        $dppJasa = 0;
-        if (is_array($rincianItem)) {
-            foreach ($rincianItem as $item) {
-                $jumlahRaw = $item['jumlah'] ?? null;
-                $jumlah = (is_numeric($jumlahRaw) && (float) $jumlahRaw > 0) ? (int) $jumlahRaw : 1;
-                $harga = (float) ($item['harga_satuan'] ?? 0);
-                $subtotal = $jumlah * $harga;
-                $dpp += $subtotal;
-                if (!empty($item['is_jasa'])) {
-                    $dppJasa += $subtotal;
-                } else {
-                    $dppBarang += $subtotal;
-                }
-            }
-        }
-        $dpp = (int) round($dpp);
-        $dppBarang = (int) round($dppBarang);
-        $dppJasa = (int) round($dppJasa);
-
-        // Calculate PPN (jika checkbox ppn_checkbox dicentang)
-        $ppnAmount = 0;
-        if ($request->has('ppn_checkbox') && $request->ppn_checkbox) {
-            $ppnAmount = (int) round($dpp * 0.11);
-        }
-
-        // PPH 22: dari item barang, threshold > 2jt
-        $pph22Amount = 0;
-        $tarifPajak22 = (float) ($request->tarif_pajak ?? 0);
-        if ($tarifPajak22 > 0 && $dppBarang > 2000000) {
-            $pph22Amount = (int) round($dppBarang * $tarifPajak22 / 100);
-        }
-
-        // PPH 23: dari item jasa saja
-        $pph23Amount = 0;
-        $tarifPajak23 = (float) ($request->tarif_pajak_23 ?? 0);
-        if ($tarifPajak23 > 0 && $dppJasa > 0) {
-            $pph23Amount = (int) round($dppJasa * $tarifPajak23 / 100);
-        }
-
-        $pphAmount = $pph22Amount + $pph23Amount;
-
-        // Derive jenis_pph
-        if ($pph22Amount > 0 && $pph23Amount > 0)
-            $jenisPph = '22,23';
-        elseif ($pph22Amount > 0)
-            $jenisPph = '22';
-        elseif ($pph23Amount > 0)
-            $jenisPph = '23';
-        else
-            $jenisPph = '';
+        $tax = KuitansiTaxCalculator::calculate(
+            $rincianItem,
+            $request->has('ppn_checkbox') && $request->ppn_checkbox,
+            (float) ($request->tarif_pajak ?? 0),
+            (float) ($request->tarif_pajak_23 ?? 0)
+        );
+        $dpp = $tax['dpp'];
+        $ppnAmount = $tax['ppn'];
+        $pph22Amount = $tax['pph_22'];
+        $pph23Amount = $tax['pph_23'];
+        $pphAmount = $tax['pph'];
+        $jenisPph = $tax['jenis_pph'];
 
         // Total Akhir = DPP
         $totalAkhir = $dpp;
 
         // Get staff for snapshot (filter by instansi)
-        $userInstansi = auth()->user()->instansi;
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $userInstansi)->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $userInstansi)->first();
-        $pptk = Staff::findOrFail($request->pptk_1_id);
+        $pptk = Staff::where('instansi', $userInstansi)->findOrFail($request->pptk_1_id);
 
         // Handle nama_bendahara_barang from form input (if provided)
         $namaBendaharaBarang = null;
@@ -260,7 +326,10 @@ class KuitansiController extends Controller
 
     public function edit(string $id)
     {
-        $kuitansi = Kuitansi::with(['rekanan', 'pptk', 'kodeRekening.subKegiatan.kegiatan'])->findOrFail($id);
+        $userInstansi = auth()->user()->instansi;
+        $kuitansi = Kuitansi::with(['rekanan', 'pptk', 'kodeRekening.subKegiatan.kegiatan'])
+            ->where('instansi', $userInstansi)
+            ->findOrFail($id);
         return response()->json($kuitansi);
     }
 
@@ -271,6 +340,10 @@ class KuitansiController extends Controller
                 'periode_lengkap' => strtoupper($request->periode_lengkap),
             ]);
         }
+
+        $userInstansi = auth()->user()->instansi;
+
+        $kuitansi = Kuitansi::where('instansi', $userInstansi)->findOrFail($id);
 
         $request->validate([
             'nomor_rekening' => 'required|string|max:255',
@@ -284,7 +357,14 @@ class KuitansiController extends Controller
             'rincian_item_json' => 'nullable|json',
             'kode_objek_pajak_23' => 'nullable|string|max:255',
             'tarif_pajak_23' => 'nullable|numeric',
-            'pptk_1_id' => 'required|exists:staff,id',
+            'pptk_1_id' => [
+                'required',
+                Rule::exists('staff', 'id')->where('instansi', $userInstansi),
+            ],
+            'id_kode_rekening' => [
+                'nullable',
+                Rule::exists('kode_rekening', 'id')->where('instansi', $userInstansi),
+            ],
         ]);
 
         if ($request->penerima_type === 'rekanan' && !$request->rekanan_id) {
@@ -314,7 +394,6 @@ class KuitansiController extends Controller
                 : $periodeType . ' / ' . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
         }
 
-        $kuitansi = Kuitansi::findOrFail($id);
         $penerima = $this->resolvePenerima($request);
 
         $rincianItem = null;
@@ -322,68 +401,26 @@ class KuitansiController extends Controller
             $rincianItem = json_decode($request->rincian_item_json, true);
         }
 
-        // Calculate DPP total, DPP Barang (non-jasa), DPP Jasa
-        $dpp = 0;
-        $dppBarang = 0;
-        $dppJasa = 0;
-        if (is_array($rincianItem)) {
-            foreach ($rincianItem as $item) {
-                $jumlahRaw = $item['jumlah'] ?? null;
-                $jumlah = (is_numeric($jumlahRaw) && (float) $jumlahRaw > 0) ? (int) $jumlahRaw : 1;
-                $harga = (float) ($item['harga_satuan'] ?? 0);
-                $subtotal = $jumlah * $harga;
-                $dpp += $subtotal;
-                if (!empty($item['is_jasa'])) {
-                    $dppJasa += $subtotal;
-                } else {
-                    $dppBarang += $subtotal;
-                }
-            }
-        }
-        $dpp = (int) round($dpp);
-        $dppBarang = (int) round($dppBarang);
-        $dppJasa = (int) round($dppJasa);
-
-        // Calculate PPN (jika checkbox ppn_checkbox dicentang)
-        $ppnAmount = 0;
-        if ($request->has('ppn_checkbox') && $request->ppn_checkbox) {
-            $ppnAmount = (int) round($dpp * 0.11);
-        }
-
-        // PPH 22: dari item barang, threshold > 2jt
-        $pph22Amount = 0;
-        $tarifPajak22 = (float) ($request->tarif_pajak ?? 0);
-        if ($tarifPajak22 > 0 && $dppBarang > 2000000) {
-            $pph22Amount = (int) round($dppBarang * $tarifPajak22 / 100);
-        }
-
-        // PPH 23: dari item jasa saja
-        $pph23Amount = 0;
-        $tarifPajak23 = (float) ($request->tarif_pajak_23 ?? 0);
-        if ($tarifPajak23 > 0 && $dppJasa > 0) {
-            $pph23Amount = (int) round($dppJasa * $tarifPajak23 / 100);
-        }
-
-        $pphAmount = $pph22Amount + $pph23Amount;
-
-        // Derive jenis_pph
-        if ($pph22Amount > 0 && $pph23Amount > 0)
-            $jenisPph = '22,23';
-        elseif ($pph22Amount > 0)
-            $jenisPph = '22';
-        elseif ($pph23Amount > 0)
-            $jenisPph = '23';
-        else
-            $jenisPph = '';
+        $tax = KuitansiTaxCalculator::calculate(
+            $rincianItem,
+            $request->has('ppn_checkbox') && $request->ppn_checkbox,
+            (float) ($request->tarif_pajak ?? 0),
+            (float) ($request->tarif_pajak_23 ?? 0)
+        );
+        $dpp = $tax['dpp'];
+        $ppnAmount = $tax['ppn'];
+        $pph22Amount = $tax['pph_22'];
+        $pph23Amount = $tax['pph_23'];
+        $pphAmount = $tax['pph'];
+        $jenisPph = $tax['jenis_pph'];
 
         // Total Akhir = DPP
         $totalAkhir = $dpp;
 
         // Get staff for snapshot (filter by instansi)
-        $userInstansi = auth()->user()->instansi;
         $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $userInstansi)->first();
         $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $userInstansi)->first();
-        $pptk = Staff::findOrFail($request->pptk_1_id);
+        $pptk = Staff::where('instansi', $userInstansi)->findOrFail($request->pptk_1_id);
 
         // Handle nama_bendahara_barang from form input (if provided)
         $namaBendaharaBarang = null;
@@ -436,7 +473,10 @@ class KuitansiController extends Controller
 
     public function destroy(string $id)
     {
-        $kuitansi = Kuitansi::findOrFail($id);
+        $userInstansi = auth()->user()->instansi;
+        $kuitansi = Kuitansi::where('instansi', $userInstansi)->findOrFail($id);
+        $kuitansi->deleted_by = auth()->user()->id;
+        $kuitansi->save();
         $kuitansi->delete();
 
         return redirect()->route('kuitansi.index')->with('success', 'kuitansi berhasil dihapus.');
@@ -444,11 +484,14 @@ class KuitansiController extends Controller
 
     public function preview(string $id)
     {
-        $kuitansi = Kuitansi::with(['rekanan', 'pptk', 'kodeRekening.subKegiatan.kegiatan'])->findOrFail($id);
+        $userInstansi = auth()->user()->instansi;
+        $kuitansi = Kuitansi::with(['rekanan', 'pptk', 'kodeRekening.subKegiatan.kegiatan'])
+            ->where('instansi', $userInstansi)
+            ->findOrFail($id);
 
-        // Get fixed staff
-        $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->first();
-        $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->first();
+        // Get fixed staff (filter by instansi milik kuitansi)
+        $penggunaAnggaran = Staff::where('status', 'Pengguna Anggaran')->where('instansi', $kuitansi->instansi)->first();
+        $bendaharaPengeluaran = Staff::where('status', 'Bendahara Pengeluaran')->where('instansi', $kuitansi->instansi)->first();
 
         // Get instansi data for kop
         $instansiData = \App\Models\Instansi::where('nama', $kuitansi->instansi)->first();
@@ -459,7 +502,10 @@ class KuitansiController extends Controller
     // API endpoints for cascading selects
     public function getKegiatan()
     {
+        $userInstansi = auth()->user()->instansi;
+
         $kegiatan = Kegiatan::selectRaw('id_giat as id, id_giat, kode_giat as kode, kode_giat, nama_giat as nama, nama_giat')
+            ->where('instansi', $userInstansi)
             ->distinct()
             ->orderBy('kode')
             ->get();
@@ -469,10 +515,12 @@ class KuitansiController extends Controller
 
     public function getSubKegiatan(Request $request)
     {
+        $userInstansi = auth()->user()->instansi;
         $idGiat = $request->query('id_giat') ?? $request->query('id');
 
         $subKegiatan = SubKegiatan::selectRaw('id_sub_giat as id, id_sub_giat, id_giat, kode_sub_giat as kode, kode_sub_giat, nama_sub_giat as nama, nama_sub_giat')
             ->where('id_giat', $idGiat)
+            ->where('instansi', $userInstansi)
             ->distinct()
             ->orderBy('kode')
             ->get();
@@ -482,10 +530,12 @@ class KuitansiController extends Controller
 
     public function getKodeRekening(Request $request)
     {
+        $userInstansi = auth()->user()->instansi;
         $idSubGiat = $request->query('id_sub_giat') ?? $request->query('id');
 
         $kodeRekening = KodeRekening::selectRaw('id, id_akun, id_sub_giat, kode_akun as kode, kode_akun, nama_akun as nama, nama_akun')
             ->where('id_sub_giat', $idSubGiat)
+            ->where('instansi', $userInstansi)
             ->orderBy('kode')
             ->get();
 
@@ -512,33 +562,20 @@ class KuitansiController extends Controller
             return (int) round((float) ($kuitansi->dpp ?? 0));
         }
 
-        $dpp = 0;
-        $dppBarang = 0;
-        $dppJasa = 0;
-
-        foreach ($rincianItem as $item) {
-            $jumlahRaw = $item['jumlah'] ?? null;
-            $jumlah = (is_numeric($jumlahRaw) && (float) $jumlahRaw > 0) ? (int) $jumlahRaw : 1;
-            $harga = (float) ($item['harga_satuan'] ?? 0);
-            $subtotal = $jumlah * $harga;
-
-            $dpp += $subtotal;
-            if (!empty($item['is_jasa'])) {
-                $dppJasa += $subtotal;
-            } else {
-                $dppBarang += $subtotal;
-            }
-        }
+        $dppResult = KuitansiTaxCalculator::computeDpp($rincianItem);
+        $dpp = $dppResult['dpp'];
+        $dppBarang = $dppResult['dpp_barang'];
+        $dppJasa = $dppResult['dpp_jasa'];
 
         if (!empty($kuitansi->kode_objek_pajak_23)) {
-            return (int) round($dppJasa);
+            return $dppJasa;
         }
 
         if (!empty($kuitansi->kode_objek_pajak)) {
-            return (int) round($dppBarang > 0 ? $dppBarang : $dpp);
+            return $dppBarang > 0 ? $dppBarang : $dpp;
         }
 
-        return (int) round($dpp);
+        return $dpp;
     }
 
     public function exportBupotXml(Request $request)
@@ -546,9 +583,13 @@ class KuitansiController extends Controller
         $bulan = $request->query('bulan', date('n')); // Default bulan sekarang
         $tahun = $request->query('tahun', date('Y')); // Default tahun sekarang
 
+        // NPWP Pemotong - ambil dari instansi user yang login
+        $userInstansi = auth()->user()->instansi;
+
         // Ambil data kuitansi berdasarkan bulan dan tahun dari tanggal_pemotongan
         // Punya kode_objek_pajak (PPh 22) ATAU kode_objek_pajak_23 (PPh 23)
         $kuitansis = Kuitansi::with('rekanan')
+            ->where('instansi', $userInstansi)
             ->where(function ($q) {
                 $q->whereNotNull('kode_objek_pajak')
                     ->orWhereNotNull('kode_objek_pajak_23');
@@ -564,8 +605,6 @@ class KuitansiController extends Controller
             return back()->with('error', 'Tidak ada data kuitansi dengan data BuPot lengkap untuk periode tersebut.');
         }
 
-        // NPWP Pemotong - ambil dari instansi user yang login
-        $userInstansi = auth()->user()->instansi;
         $instansiData = \App\Models\Instansi::where('nama', $userInstansi)->first();
         $npwpPemotong = $instansiData?->npwp ?? '';
 
@@ -620,9 +659,13 @@ class KuitansiController extends Controller
             return response()->json(['error' => 'Pilih minimal 1 kuitansi untuk export XML.'], 422);
         }
 
-        // Ambil semua kuitansi yang dipilih
+        // NPWP Pemotong - ambil dari instansi user yang login
+        $userInstansi = auth()->user()->instansi;
+
+        // Ambil semua kuitansi yang dipilih, dibatasi pada instansi user yang sedang login
         $allSelected = Kuitansi::with('rekanan')
             ->whereIn('id', $kuitansiIds)
+            ->where('instansi', $userInstansi)
             ->orderBy('tanggal_pemotongan')
             ->get();
 
@@ -636,8 +679,6 @@ class KuitansiController extends Controller
             return response()->json(['error' => 'Tidak ada kuitansi dengan data BuPot lengkap di antara pilihan Anda. Pastikan kode objek pajak dan DPP sudah terisi.'], 422);
         }
 
-        // NPWP Pemotong - ambil dari instansi user yang login
-        $userInstansi = auth()->user()->instansi;
         $instansiData = \App\Models\Instansi::where('nama', $userInstansi)->first();
         $npwpPemotong = $instansiData?->npwp ?? '';
 
