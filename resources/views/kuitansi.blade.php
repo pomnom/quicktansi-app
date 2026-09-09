@@ -1635,23 +1635,24 @@
                 return;
             }
 
-            // Build suggestions HTML - show up to 15 results (instead of 10)
+            // Build suggestions HTML - dibatasi 6 hasil supaya dropdown tidak
+            // menutupi tombol "Tambah Item" dan bagian form di bawahnya.
             let html = '';
-            const maxResults = Math.min(15, filtered.length);
-            
+            const maxResults = Math.min(6, filtered.length);
+
             for (let i = 0; i < maxResults; i++) {
                 const item = filtered[i];
                 html += `<div class="autocomplete-item" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #eee; white-space: normal; word-wrap: break-word; max-height: 60px; overflow: hidden;">${escapeHtml(item)}</div>`;
             }
-            
+
             // Show count if there are more results
             if (filtered.length > maxResults) {
                 html += `<div style="padding:8px 12px; background:#f9f9f9; border-top:1px solid #ddd; font-size:12px; color:#666;">+${filtered.length - maxResults} more results</div>`;
             }
-            
+
             suggestionsDiv.innerHTML = html;
             suggestionsDiv.style.display = 'block';
-            suggestionsDiv.style.maxHeight = '300px';  // Show more visible items
+            suggestionsDiv.style.maxHeight = '180px';
 
             // Add click handlers to suggestions
             suggestionsDiv.querySelectorAll('.autocomplete-item').forEach(item => {
