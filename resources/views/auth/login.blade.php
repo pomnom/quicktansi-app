@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Kuitansi App</title>
-    <link href="{{ asset('admin/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('admin/css/sb-admin-2.min.css') }}" rel="stylesheet">
     <link href="{{ asset('admin/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
     <style>
@@ -356,6 +355,5 @@
         </div>
     </div>
 
-    <script src="{{ asset('admin/js/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>

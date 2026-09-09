@@ -1377,7 +1377,7 @@
     $(document).on('click', '.edit-btn', function() {
         const id = $(this).data('id');
         $.get('/kuitansi/' + id + '/edit', function(data) {
-            $('#edit_nomor_urut').val(String(data.nomor_urut).padStart(3, '0'));
+            $('#edit_nomor_urut').val(data.nomor_urut ? String(data.nomor_urut).padStart(3, '0') : '');
             $('#edit_periode_lengkap').val(formatPeriodeLengkap(data.periode_type, data.periode_number)).trigger('change');
             setPenerimaInputFromData('#edit_penerima_lookup', '#editPenerimaList', '#edit_rekanan_id', '#edit_staff_id', '#edit_penerima_type', data.rekanan_id, data.nama_penerima);
             $('#edit_tanggal_kuitansi').val(data.tanggal_kuitansi);
