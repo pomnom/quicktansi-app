@@ -762,6 +762,12 @@
     @endforeach
 </datalist>
 
+<datalist id="itemNamaList">
+    @foreach($recentItemNames as $namaItem)
+        <option value="{{ $namaItem }}"></option>
+    @endforeach
+</datalist>
+
 @endsection
 
 @push('scripts')
@@ -1278,7 +1284,7 @@
         const row = document.createElement('tr');
         row.id = rowId;
         row.innerHTML = `
-            <td><input type="text" class="form-control form-control-sm item-name" placeholder="Nama item"></td>
+            <td><input type="text" class="form-control form-control-sm item-name" list="itemNamaList" placeholder="Nama item"></td>
             <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah (opsional)" min="1" step="1"></td>
             <td><input type="text" class="form-control form-control-sm item-unit" placeholder="Contoh: pcs"></td>
             <td><input type="number" class="form-control form-control-sm item-price" placeholder="Harga satuan" min="0" step="0.01"></td>
@@ -1298,10 +1304,10 @@
         const row = document.createElement('tr');
         row.id = rowId;
         row.innerHTML = `
-            <td><input type="text" class="form-control form-control-sm item-name" placeholder="Nama item" value="${nama}"></td>
-            <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah (opsional)" min="1" step="1" value="${jumlah}"></td>
-            <td><input type="text" class="form-control form-control-sm item-unit" placeholder="Contoh: pcs" value="${satuan}"></td>
-            <td><input type="number" class="form-control form-control-sm item-price" placeholder="Harga satuan" min="0" step="0.01" value="${harga}"></td>
+            <td><input type="text" class="form-control form-control-sm item-name" list="itemNamaList" placeholder="Nama item" value="${escapeHtmlAttr(nama)}"></td>
+            <td><input type="number" class="form-control form-control-sm item-qty" placeholder="Jumlah (opsional)" min="1" step="1" value="${escapeHtmlAttr(jumlah)}"></td>
+            <td><input type="text" class="form-control form-control-sm item-unit" placeholder="Contoh: pcs" value="${escapeHtmlAttr(satuan)}"></td>
+            <td><input type="number" class="form-control form-control-sm item-price" placeholder="Harga satuan" min="0" step="0.01" value="${escapeHtmlAttr(harga)}"></td>
             <td class="jasa-col text-center"><input type="checkbox" class="item-jasa" ${isJasa ? 'checked' : ''}></td>
             <td><button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow('${rowId}')"><i class="fas fa-trash"></i></button></td>
         `;
@@ -1591,9 +1597,9 @@
     // TEXTAREA AUTOCOMPLETE
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Get recent "untuk_pembayaran" values from PHP and clean them
-    let recentPembayaran = @json(\DB::table('kuitansis')->select('untuk_pembayaran', \DB::raw('MAX(created_at) as last_used'))->whereNotNull('untuk_pembayaran')->groupBy('untuk_pembayaran')->orderBy('last_used', 'desc')->limit(50)->pluck('untuk_pembayaran')->toArray());
-    
+    // Nilai "untuk_pembayaran" terbaru milik instansi user (dari controller, sudah di-scope).
+    let recentPembayaran = @json($recentPembayaran);
+
     // Filter out null/empty values and trim each item (but keep original for display)
     recentPembayaran = recentPembayaran.filter(item => item && String(item).trim().length > 0)
                                        .map(item => String(item).trim());

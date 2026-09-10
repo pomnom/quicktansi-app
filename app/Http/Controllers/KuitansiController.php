@@ -35,6 +35,29 @@ class KuitansiController extends Controller
         $bendaharaBarang = Staff::where('status', 'Bendahara Barang')->where('instansi', $userInstansi)->first();
         $kodeObjekPajaks = DB::table('kode_objek_pajaks')->orderBy('kode')->get();
 
+        // Saran autocomplete untuk "Untuk Pembayaran", dibatasi ke instansi user sendiri.
+        $recentPembayaran = Kuitansi::where('instansi', $userInstansi)
+            ->whereNotNull('untuk_pembayaran')
+            ->select('untuk_pembayaran', DB::raw('MAX(created_at) as last_used'))
+            ->groupBy('untuk_pembayaran')
+            ->orderByDesc('last_used')
+            ->limit(50)
+            ->pluck('untuk_pembayaran');
+
+        // Saran autocomplete untuk nama item rincian barang/jasa, diambil dari
+        // 100 kuitansi terbaru milik instansi ini (rincian_item adalah kolom JSON).
+        $recentItemNames = Kuitansi::where('instansi', $userInstansi)
+            ->whereNotNull('rincian_item')
+            ->orderByDesc('created_at')
+            ->limit(100)
+            ->get(['rincian_item'])
+            ->flatMap(fn ($kuitansi) => collect($kuitansi->rincian_item ?? [])->pluck('nama'))
+            ->map(fn ($nama) => trim((string) $nama))
+            ->filter()
+            ->unique()
+            ->values()
+            ->take(50);
+
         return view('kuitansi', compact(
             'totalKuitansi',
             'totalNominal',
@@ -43,6 +66,8 @@ class KuitansiController extends Controller
             'rekanans',
             'staffs',
             'pptks',
+            'recentPembayaran',
+            'recentItemNames',
             'bendaharaBarang',
             'kodeObjekPajaks'
         ));
