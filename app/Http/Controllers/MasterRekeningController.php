@@ -10,11 +10,6 @@ use Illuminate\Http\Request;
 
 class MasterRekeningController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('superadmin');
-    }
-
     public function index()
     {
         $user = auth()->user();
@@ -43,7 +38,8 @@ class MasterRekeningController extends Controller
             'nama_giat' => 'required|string|max:255',
         ]);
 
-        $validated['id_giat'] = (Kegiatan::where('instansi', $instansi)->max('id_giat') ?? 0) + 1;
+        // id_giat unik secara global (bukan per instansi), jadi hitung MAX secara global agar tidak bentrok antar instansi.
+        $validated['id_giat'] = (Kegiatan::max('id_giat') ?? 0) + 1;
         $validated['instansi'] = $instansi;
 
         Kegiatan::create($validated);
@@ -118,7 +114,8 @@ class MasterRekeningController extends Controller
             'nama_sub_giat' => 'required|string|max:255',
         ]);
 
-        $validated['id_sub_giat'] = (SubKegiatan::where('instansi', $instansi)->max('id_sub_giat') ?? 0) + 1;
+        // id_sub_giat unik secara global (bukan per instansi), jadi hitung MAX secara global agar tidak bentrok antar instansi.
+        $validated['id_sub_giat'] = (SubKegiatan::max('id_sub_giat') ?? 0) + 1;
         $validated['instansi'] = $instansi;
 
         SubKegiatan::create($validated);

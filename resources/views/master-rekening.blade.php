@@ -140,7 +140,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0 dt-table" id="dataTableKegiatan" data-custom-dt="1">
+                <table class="table table-bordered table-hover mb-0 dt-table" id="dataTableKegiatan" data-custom-dt="1" data-has-rows="{{ $totalKegiatan ? 1 : 0 }}">
                     <thead>
                         <tr>
                             <th style="width:50px;" class="text-center">#</th>
@@ -204,7 +204,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0 dt-table" id="dataTableSubKegiatan" data-custom-dt="1">
+                <table class="table table-bordered table-hover mb-0 dt-table" id="dataTableSubKegiatan" data-custom-dt="1" data-has-rows="{{ $totalSubKegiatan ? 1 : 0 }}">
                     <thead>
                         <tr>
                             <th style="width:50px;" class="text-center">#</th>
@@ -270,7 +270,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0 dt-table" id="dataTableKodeRekening" data-custom-dt="1">
+                <table class="table table-bordered table-hover mb-0 dt-table" id="dataTableKodeRekening" data-custom-dt="1" data-has-rows="{{ $totalRekening ? 1 : 0 }}">
                     <thead>
                         <tr>
                             <th style="width:50px;" class="text-center">#</th>
@@ -306,7 +306,7 @@
                             <td class="text-center">
                                 <div class="d-inline-flex" style="gap:4px;">
                                     <button type="button" class="btn btn-info btn-sm" style="border-radius:8px;" title="Edit"
-                                        onclick="openEditKodeRekening({{ $rekening->id }}, '{{ $rekening->id_sub_giat }}', '{{ addslashes($rekening->kode_akun) }}', '{{ addslashes($rekening->nama_akun) }}', {{ $rekening->is_blokir ? 'true' : 'false' }})">
+                                        onclick="openEditKodeRekening({{ $rekening->id }}, '{{ $rekening->subKegiatan?->id_giat }}', '{{ $rekening->id_sub_giat }}', '{{ addslashes($rekening->kode_akun) }}', '{{ addslashes($rekening->nama_akun) }}', {{ $rekening->is_blokir ? 'true' : 'false' }})">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <form method="POST" action="{{ route('master-rekening.kode-rekening.destroy', $rekening->id) }}" class="d-inline" onsubmit="return confirmHapus(event, 'kode rekening ini');">
@@ -338,11 +338,11 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Giat</label>
-                    <input type="text" name="kode_giat" class="form-control" required>
+                    <input type="text" name="kode_giat" class="form-control" maxlength="50" required>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Nama Kegiatan</label>
-                    <input type="text" name="nama_giat" class="form-control" required>
+                    <input type="text" name="nama_giat" class="form-control" maxlength="255" required>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -364,11 +364,11 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Giat</label>
-                    <input type="text" name="kode_giat" id="edit_kegiatan_kode_giat" class="form-control" required>
+                    <input type="text" name="kode_giat" id="edit_kegiatan_kode_giat" class="form-control" maxlength="50" required>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Nama Kegiatan</label>
-                    <input type="text" name="nama_giat" id="edit_kegiatan_nama_giat" class="form-control" required>
+                    <input type="text" name="nama_giat" id="edit_kegiatan_nama_giat" class="form-control" maxlength="255" required>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -390,20 +390,20 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="font-weight-bold">Kegiatan Induk</label>
-                    <select name="id_giat" class="form-control" required>
+                    <select name="id_giat" class="form-control select2-search" data-dropdown-parent="#addSubKegiatanModal" required>
                         <option value="">Pilih Kegiatan</option>
                         @foreach($kegiatans as $kegiatan)
-                        <option value="{{ $kegiatan->id_giat }}">{{ $kegiatan->kode_giat }} — {{ $kegiatan->nama_giat }}</option>
+                        <option value="{{ $kegiatan->id_giat }}">{{ $kegiatan->kode_giat }} — {{ $kegiatan->nama_giat }}@if(auth()->user()->is_superadmin) ({{ $kegiatan->instansi }})@endif</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Sub Giat</label>
-                    <input type="text" name="kode_sub_giat" class="form-control" required>
+                    <input type="text" name="kode_sub_giat" class="form-control" maxlength="50" required>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Nama Sub Kegiatan</label>
-                    <input type="text" name="nama_sub_giat" class="form-control" required>
+                    <input type="text" name="nama_sub_giat" class="form-control" maxlength="255" required>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -425,20 +425,20 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="font-weight-bold">Kegiatan Induk</label>
-                    <select name="id_giat" id="edit_sub_kegiatan_id_giat" class="form-control" required>
+                    <select name="id_giat" id="edit_sub_kegiatan_id_giat" class="form-control select2-search" data-dropdown-parent="#editSubKegiatanModal" required>
                         <option value="">Pilih Kegiatan</option>
                         @foreach($kegiatans as $kegiatan)
-                        <option value="{{ $kegiatan->id_giat }}">{{ $kegiatan->kode_giat }} — {{ $kegiatan->nama_giat }}</option>
+                        <option value="{{ $kegiatan->id_giat }}">{{ $kegiatan->kode_giat }} — {{ $kegiatan->nama_giat }}@if(auth()->user()->is_superadmin) ({{ $kegiatan->instansi }})@endif</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Sub Giat</label>
-                    <input type="text" name="kode_sub_giat" id="edit_sub_kegiatan_kode_sub_giat" class="form-control" required>
+                    <input type="text" name="kode_sub_giat" id="edit_sub_kegiatan_kode_sub_giat" class="form-control" maxlength="50" required>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Nama Sub Kegiatan</label>
-                    <input type="text" name="nama_sub_giat" id="edit_sub_kegiatan_nama_sub_giat" class="form-control" required>
+                    <input type="text" name="nama_sub_giat" id="edit_sub_kegiatan_nama_sub_giat" class="form-control" maxlength="255" required>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -459,21 +459,31 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
+                    <label class="font-weight-bold">Kegiatan</label>
+                    <select id="add_kode_rekening_id_giat" class="form-control select2-search" data-dropdown-parent="#addKodeRekeningModal" data-sub-select="#add_kode_rekening_id_sub_giat">
+                        <option value="">Pilih Kegiatan</option>
+                        @foreach($kegiatans as $kegiatan)
+                        <option value="{{ $kegiatan->id_giat }}">{{ $kegiatan->kode_giat }} — {{ $kegiatan->nama_giat }}@if(auth()->user()->is_superadmin) ({{ $kegiatan->instansi }})@endif</option>
+                        @endforeach
+                    </select>
+                    <small class="form-text text-muted">Pilih kegiatan dulu untuk menyaring daftar sub kegiatan di bawah.</small>
+                </div>
+                <div class="form-group">
                     <label class="font-weight-bold">Sub Kegiatan</label>
-                    <select name="id_sub_giat" class="form-control" required>
-                        <option value="">Pilih Sub Kegiatan</option>
+                    <select name="id_sub_giat" id="add_kode_rekening_id_sub_giat" class="form-control select2-search" data-dropdown-parent="#addKodeRekeningModal" required>
+                        <option value="">Pilih Kegiatan terlebih dahulu</option>
                         @foreach($subKegiatans as $subKegiatan)
-                        <option value="{{ $subKegiatan->id_sub_giat }}">{{ $subKegiatan->kode_sub_giat }} — {{ $subKegiatan->nama_sub_giat }}</option>
+                        <option value="{{ $subKegiatan->id_sub_giat }}" data-id-giat="{{ $subKegiatan->id_giat }}">{{ $subKegiatan->kode_sub_giat }} — {{ $subKegiatan->nama_sub_giat }}@if(auth()->user()->is_superadmin) ({{ $subKegiatan->instansi }})@endif</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Akun</label>
-                    <input type="text" name="kode_akun" class="form-control" required>
+                    <input type="text" name="kode_akun" class="form-control" maxlength="50" required>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Nama Akun</label>
-                    <input type="text" name="nama_akun" class="form-control" required>
+                    <input type="text" name="nama_akun" class="form-control" maxlength="255" required>
                 </div>
                 <div class="form-group">
                     <div class="custom-control custom-checkbox">
@@ -502,21 +512,31 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
+                    <label class="font-weight-bold">Kegiatan</label>
+                    <select id="edit_kode_rekening_id_giat" class="form-control select2-search" data-dropdown-parent="#editKodeRekeningModal" data-sub-select="#edit_kode_rekening_id_sub_giat">
+                        <option value="">Pilih Kegiatan</option>
+                        @foreach($kegiatans as $kegiatan)
+                        <option value="{{ $kegiatan->id_giat }}">{{ $kegiatan->kode_giat }} — {{ $kegiatan->nama_giat }}@if(auth()->user()->is_superadmin) ({{ $kegiatan->instansi }})@endif</option>
+                        @endforeach
+                    </select>
+                    <small class="form-text text-muted">Pilih kegiatan dulu untuk menyaring daftar sub kegiatan di bawah.</small>
+                </div>
+                <div class="form-group">
                     <label class="font-weight-bold">Sub Kegiatan</label>
-                    <select name="id_sub_giat" id="edit_kode_rekening_id_sub_giat" class="form-control" required>
-                        <option value="">Pilih Sub Kegiatan</option>
+                    <select name="id_sub_giat" id="edit_kode_rekening_id_sub_giat" class="form-control select2-search" data-dropdown-parent="#editKodeRekeningModal" required>
+                        <option value="">Pilih Kegiatan terlebih dahulu</option>
                         @foreach($subKegiatans as $subKegiatan)
-                        <option value="{{ $subKegiatan->id_sub_giat }}">{{ $subKegiatan->kode_sub_giat }} — {{ $subKegiatan->nama_sub_giat }}</option>
+                        <option value="{{ $subKegiatan->id_sub_giat }}" data-id-giat="{{ $subKegiatan->id_giat }}">{{ $subKegiatan->kode_sub_giat }} — {{ $subKegiatan->nama_sub_giat }}@if(auth()->user()->is_superadmin) ({{ $subKegiatan->instansi }})@endif</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Kode Akun</label>
-                    <input type="text" name="kode_akun" id="edit_kode_rekening_kode_akun" class="form-control" required>
+                    <input type="text" name="kode_akun" id="edit_kode_rekening_kode_akun" class="form-control" maxlength="50" required>
                 </div>
                 <div class="form-group">
                     <label class="font-weight-bold">Nama Akun</label>
-                    <input type="text" name="nama_akun" id="edit_kode_rekening_nama_akun" class="form-control" required>
+                    <input type="text" name="nama_akun" id="edit_kode_rekening_nama_akun" class="form-control" maxlength="255" required>
                 </div>
                 <div class="form-group">
                     <div class="custom-control custom-checkbox">
@@ -562,15 +582,46 @@ function openEditKegiatan(id, kodeGiat, namaGiat) {
 
 function openEditSubKegiatan(id, idGiat, kodeSubGiat, namaSubGiat) {
     document.getElementById('editSubKegiatanForm').action = `/master-rekening/sub-kegiatan/${id}`;
-    document.getElementById('edit_sub_kegiatan_id_giat').value = idGiat;
+    $('#edit_sub_kegiatan_id_giat').val(String(idGiat)).trigger('change');
     document.getElementById('edit_sub_kegiatan_kode_sub_giat').value = kodeSubGiat;
     document.getElementById('edit_sub_kegiatan_nama_sub_giat').value = namaSubGiat;
     $('#editSubKegiatanModal').modal('show');
 }
 
-function openEditKodeRekening(id, idSubGiat, kodeAkun, namaAkun, isBlokir) {
+// Cascading Kegiatan -> Sub Kegiatan: sub kegiatan hanya menampilkan opsi milik kegiatan yang dipilih,
+// supaya user tidak harus mencari di antara semua sub kegiatan instansi (bisa puluhan/ratusan).
+function setupKodeRekeningCascade(kegiatanSelId, subSelId) {
+    const $kegiatanSel = $(kegiatanSelId);
+    const $subSel = $(subSelId);
+    const allSubOptions = $subSel.find('option[data-id-giat]').detach();
+
+    function apply(kegiatanId, keepValue) {
+        const desiredValue = keepValue !== undefined ? String(keepValue) : $subSel.val();
+        $subSel.find('option[data-id-giat]').remove();
+        if (kegiatanId) {
+            allSubOptions.filter(function () { return String($(this).data('id-giat')) === String(kegiatanId); })
+                .clone()
+                .appendTo($subSel);
+            $subSel.find('option[value=""]').text('Pilih Sub Kegiatan');
+        } else {
+            $subSel.find('option[value=""]').text('Pilih Kegiatan terlebih dahulu');
+        }
+        const stillValid = desiredValue && $subSel.find(`option[value="${desiredValue}"]`).length > 0;
+        $subSel.val(stillValid ? desiredValue : '').trigger('change');
+    }
+
+    $kegiatanSel.on('change', function () { apply($(this).val()); });
+
+    return apply;
+}
+
+const applyAddKodeRekeningCascade = setupKodeRekeningCascade('#add_kode_rekening_id_giat', '#add_kode_rekening_id_sub_giat');
+const applyEditKodeRekeningCascade = setupKodeRekeningCascade('#edit_kode_rekening_id_giat', '#edit_kode_rekening_id_sub_giat');
+
+function openEditKodeRekening(id, idGiat, idSubGiat, kodeAkun, namaAkun, isBlokir) {
     document.getElementById('editKodeRekeningForm').action = `/master-rekening/kode-rekening/${id}`;
-    document.getElementById('edit_kode_rekening_id_sub_giat').value = idSubGiat;
+    $('#edit_kode_rekening_id_giat').val(String(idGiat)).trigger('change');
+    applyEditKodeRekeningCascade(idGiat, idSubGiat);
     document.getElementById('edit_kode_rekening_kode_akun').value = kodeAkun;
     document.getElementById('edit_kode_rekening_nama_akun').value = namaAkun;
     document.getElementById('edit_kode_rekening_is_blokir').checked = !!isBlokir;
@@ -578,6 +629,19 @@ function openEditKodeRekening(id, idSubGiat, kodeAkun, namaAkun, isBlokir) {
 }
 
 $(document).ready(function() {
+    $('.select2-search').each(function () {
+        $(this).select2({
+            width: '100%',
+            dropdownParent: $($(this).data('dropdown-parent')),
+            placeholder: $(this).find('option').first().text(),
+        });
+    });
+
+    // Reset form tambah kode rekening tiap kali modal ditutup, supaya cascade kembali ke state awal.
+    $('#addKodeRekeningModal').on('hidden.bs.modal', function () {
+        $('#add_kode_rekening_id_giat').val('').trigger('change');
+    });
+
     const isSuperadmin = {{ auth()->user()->is_superadmin ? 'true' : 'false' }};
     const dtConfig = {
         destroy: true,
@@ -603,7 +667,10 @@ $(document).ready(function() {
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Semua"]]
     };
 
-    if (!$.fn.DataTable.isDataTable('#dataTableKegiatan')) {
+    // DataTables 1.13.4 gagal mengenali baris placeholder "Belum ada data" (colspan) saat 3 tabel
+    // diinisialisasi sekaligus di halaman yang sama (error internal "_DT_CellIndex" pada tabel ke-2/ke-3).
+    // Jadi tabel yang benar-benar kosong dilewati saja dari DataTables, cukup ditampilkan sebagai tabel biasa.
+    if ($('#dataTableKegiatan').data('has-rows') && !$.fn.DataTable.isDataTable('#dataTableKegiatan')) {
         const actionColKegiatan = isSuperadmin ? 5 : 4;
         $('#dataTableKegiatan').DataTable({
             ...dtConfig,
@@ -614,7 +681,7 @@ $(document).ready(function() {
         });
     }
 
-    if (!$.fn.DataTable.isDataTable('#dataTableSubKegiatan')) {
+    if ($('#dataTableSubKegiatan').data('has-rows') && !$.fn.DataTable.isDataTable('#dataTableSubKegiatan')) {
         const actionColSubKegiatan = isSuperadmin ? 6 : 5;
         $('#dataTableSubKegiatan').DataTable({
             ...dtConfig,
@@ -625,7 +692,7 @@ $(document).ready(function() {
         });
     }
 
-    if (!$.fn.DataTable.isDataTable('#dataTableKodeRekening')) {
+    if ($('#dataTableKodeRekening').data('has-rows') && !$.fn.DataTable.isDataTable('#dataTableKodeRekening')) {
         const actionColKodeRekening = isSuperadmin ? 7 : 6;
         $('#dataTableKodeRekening').DataTable({
             ...dtConfig,

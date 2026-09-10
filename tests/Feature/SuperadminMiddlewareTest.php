@@ -65,7 +65,15 @@ class SuperadminMiddlewareTest extends TestCase
         return [
             'user management' => ['/user'],
             'instansi management' => ['/instansi'],
-            'master rekening' => ['/master-rekening'],
         ];
+    }
+
+    public function test_non_superadmin_can_manage_own_instansi_master_rekening(): void
+    {
+        $regular = $this->makeUser(false);
+
+        $response = $this->actingAs($regular)->get('/master-rekening');
+
+        $response->assertOk();
     }
 }
