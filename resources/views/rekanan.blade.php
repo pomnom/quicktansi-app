@@ -157,8 +157,16 @@
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="npwp">NPWP <small class="text-muted">(opsional)</small></label>
-                        <input type="text" class="form-control @error('npwp') is-invalid @enderror" id="npwp" name="npwp" placeholder="00.000.000.0-000.000">
+                        <label class="d-block">NPWP</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="has_npwp" id="has_npwp_yes" value="1">
+                            <label class="form-check-label" for="has_npwp_yes">Ada NPWP</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="has_npwp" id="has_npwp_no" value="0" checked>
+                            <label class="form-check-label" for="has_npwp_no">Tidak Ada NPWP</label>
+                        </div>
+                        <input type="text" class="form-control mt-2 @error('npwp') is-invalid @enderror" id="npwp" name="npwp" placeholder="9990000000999000" disabled>
                         @error('npwp')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -218,8 +226,16 @@
                 @method('PUT')
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="edit_npwp">NPWP <small class="text-muted">(opsional)</small></label>
-                        <input type="text" class="form-control" id="edit_npwp" name="npwp">
+                        <label class="d-block">NPWP</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="edit_has_npwp" id="edit_has_npwp_yes" value="1">
+                            <label class="form-check-label" for="edit_has_npwp_yes">Ada NPWP</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="edit_has_npwp" id="edit_has_npwp_no" value="0">
+                            <label class="form-check-label" for="edit_has_npwp_no">Tidak Ada NPWP</label>
+                        </div>
+                        <input type="text" class="form-control mt-2" id="edit_npwp" name="npwp" placeholder="9990000000999000">
                     </div>
                     <div class="form-group">
                         <label for="edit_nama_perusahaan">Nama Perusahaan <span class="text-danger">*</span></label>
@@ -262,16 +278,37 @@
         }).then((result) => { if (result.isConfirmed) document.getElementById('deleteRekananForm' + id).submit(); });
     }
 
+    function toggleNpwpInput(radioName, inputId, placeholderYes) {
+        const isYes = document.querySelector(`input[name="${radioName}"]:checked`).value === '1';
+        const npwpInput = document.getElementById(inputId);
+        npwpInput.disabled = !isYes;
+        if (isYes) {
+            npwpInput.placeholder = placeholderYes;
+        } else {
+            npwpInput.value = '';
+            npwpInput.placeholder = '9990000000999000';
+        }
+    }
+
+    document.querySelectorAll('input[name="has_npwp"]').forEach(el => {
+        el.addEventListener('change', () => toggleNpwpInput('has_npwp', 'npwp', '00.000.000.0-000.000'));
+    });
+    document.querySelectorAll('input[name="edit_has_npwp"]').forEach(el => {
+        el.addEventListener('change', () => toggleNpwpInput('edit_has_npwp', 'edit_npwp', '00.000.000.0-000.000'));
+    });
+
     function editRekanan(rekanan) {
-        $('#edit_npwp').val(rekanan.npwp);
+        const hasNpwp = !!rekanan.npwp;
+        $(`#edit_has_npwp_${hasNpwp ? 'yes' : 'no'}`).prop('checked', true);
+        $('#edit_npwp').val(rekanan.npwp).prop('disabled', !hasNpwp);
         $('#edit_nama_perusahaan').val(rekanan.nama_perusahaan);
         $('#edit_nomor_rekening').val(rekanan.nomor_rekening);
         $('#edit_bank').val(rekanan.bank);
         $('#edit_nama_pemilik_rekening').val(rekanan.nama_pemilik_rekening);
-        
+
         const formAction = "{{ route('rekanan.update', ':id') }}".replace(':id', rekanan.id);
         $('#editRekananForm').attr('action', formAction);
-        
+
         $('#editRekananModal').modal('show');
     }
 
